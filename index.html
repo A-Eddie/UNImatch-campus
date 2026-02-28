@@ -1,0 +1,1428 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>UniMatch v2 — Campus Dating</title>
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --rose: #e8637a;
+  --rose-dark: #c94d63;
+  --rose-light: #fff0f3;
+  --cream: #fdf8f5;
+  --dark: #1a0f12;
+  --mid: #7a4f5a;
+  --light: #f5e0e5;
+  --gold: #d4a843;
+  --green: #4caf50;
+  --shadow: 0 8px 40px rgba(232,99,122,0.13);
+  --shadow-hover: 0 20px 60px rgba(232,99,122,0.22);
+}
+
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:'Outfit',sans-serif; background:var(--cream); color:var(--dark); min-height:100vh; overflow-x:hidden; }
+
+/* ── PAGES ── */
+.page { display:none; min-height:100vh; }
+.page.active { display:block; }
+
+/* ── LANDING ── */
+#landing {
+  background: linear-gradient(145deg,#12080a 0%,#2d1018 40%,#1a0f12 100%);
+  display:flex; flex-direction:column; align-items:center; justify-content:center;
+  text-align:center; padding:2rem; position:relative; overflow:hidden; min-height:100vh;
+}
+#landing.active { display:flex; }
+
+.grain { position:absolute;inset:0;opacity:0.04;background-image:url("data:image/svg+xml,%3Csvg viewBox='0 0 256 256' xmlns='http://www.w3.org/2000/svg'%3E%3Cfilter id='noise'%3E%3CfeTurbulence type='fractalNoise' baseFrequency='0.9' numOctaves='4' stitchTiles='stitch'/%3E%3C/filter%3E%3Crect width='100%25' height='100%25' filter='url(%23noise)'/%3E%3C/svg%3E");pointer-events:none;z-index:0; }
+
+.orb { position:absolute;border-radius:50%;pointer-events:none; }
+.orb1 { width:500px;height:500px;top:-150px;left:-150px;background:radial-gradient(circle,rgba(232,99,122,0.25),transparent 70%);animation:drift1 12s ease-in-out infinite; }
+.orb2 { width:400px;height:400px;bottom:-100px;right:-100px;background:radial-gradient(circle,rgba(212,168,67,0.2),transparent 70%);animation:drift2 15s ease-in-out infinite; }
+.orb3 { width:250px;height:250px;top:50%;left:40%;background:radial-gradient(circle,rgba(232,99,122,0.15),transparent 70%);animation:drift1 10s ease-in-out infinite reverse; }
+@keyframes drift1 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(30px,-40px) scale(1.1)} }
+@keyframes drift2 { 0%,100%{transform:translate(0,0) scale(1)} 50%{transform:translate(-30px,40px) scale(1.08)} }
+
+.landing-content { position:relative;z-index:1;max-width:580px; }
+
+.brand-mark {
+  display:inline-flex;align-items:center;gap:0.5rem;
+  background:rgba(255,255,255,0.06);border:1px solid rgba(255,255,255,0.1);
+  border-radius:50px;padding:0.4rem 1.1rem;margin-bottom:2rem;
+  font-size:0.85rem;color:rgba(255,255,255,0.6);letter-spacing:0.05em;
+  animation:fadeIn 1s ease;
+}
+.brand-dot { width:8px;height:8px;background:var(--rose);border-radius:50%;animation:pulse 2s infinite; }
+@keyframes pulse { 0%,100%{opacity:1;transform:scale(1)} 50%{opacity:0.5;transform:scale(0.8)} }
+
+.landing-title {
+  font-family:'Cormorant Garamond',serif;
+  font-size:clamp(3.5rem,9vw,6rem);
+  color:#fff;line-height:1;margin-bottom:1rem;
+  animation:slideUp 0.8s ease;
+}
+.landing-title em { color:var(--rose);font-style:italic; }
+.landing-sub { color:rgba(255,255,255,0.55);font-size:1.05rem;font-weight:300;margin-bottom:3rem;line-height:1.7;animation:slideUp 0.9s ease; }
+
+.btn-group { display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;animation:slideUp 1s ease; }
+.btn { padding:0.9rem 2.2rem;border-radius:50px;font-family:'Outfit',sans-serif;font-size:0.95rem;font-weight:600;cursor:pointer;border:none;transition:all 0.3s ease;text-decoration:none; }
+.btn-primary { background:var(--rose);color:white;box-shadow:0 4px 24px rgba(232,99,122,0.45); }
+.btn-primary:hover { background:var(--rose-dark);transform:translateY(-2px);box-shadow:0 8px 32px rgba(232,99,122,0.55); }
+.btn-outline { background:transparent;color:white;border:1.5px solid rgba(255,255,255,0.25); }
+.btn-outline:hover { border-color:white;transform:translateY(-2px); }
+.btn-full { width:100%; }
+
+@keyframes slideUp { from{opacity:0;transform:translateY(24px)} to{opacity:1;transform:translateY(0)} }
+@keyframes fadeIn { from{opacity:0} to{opacity:1} }
+
+.features-row { display:flex;gap:2rem;justify-content:center;margin-top:3rem;flex-wrap:wrap; }
+.feature-pill { background:rgba(255,255,255,0.07);border:1px solid rgba(255,255,255,0.1);border-radius:12px;padding:0.6rem 1rem;color:rgba(255,255,255,0.6);font-size:0.82rem; }
+
+/* ── AUTH ── */
+.auth-page { background:var(--cream);display:flex;align-items:center;justify-content:center;padding:2rem;min-height:100vh; }
+.auth-page.active { display:flex; }
+.auth-card { background:white;border-radius:28px;padding:2.5rem;width:100%;max-width:480px;box-shadow:var(--shadow);animation:slideUp 0.5s ease; }
+.auth-header { text-align:center;margin-bottom:2rem; }
+.auth-logo { font-size:2.2rem;margin-bottom:0.5rem; }
+.auth-title { font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:var(--dark); }
+.auth-sub { color:var(--mid);font-size:0.9rem;margin-top:0.3rem; }
+
+.form-group { margin-bottom:1.1rem; }
+.form-label { display:block;font-size:0.82rem;font-weight:600;color:var(--mid);margin-bottom:0.4rem;letter-spacing:0.02em; }
+.form-input { width:100%;padding:0.85rem 1.1rem;border:2px solid #f0e0e4;border-radius:14px;font-family:'Outfit',sans-serif;font-size:0.95rem;color:var(--dark);transition:border-color 0.2s;outline:none;background:#fafafa; }
+.form-input:focus { border-color:var(--rose);background:white; }
+.form-input::placeholder { color:#c8a8b0; }
+textarea.form-input { resize:vertical; }
+
+.form-row { display:grid;grid-template-columns:1fr 1fr;gap:1rem; }
+
+.gender-select { display:flex;gap:0.6rem;flex-wrap:wrap; }
+.gender-btn { flex:1;min-width:80px;padding:0.7rem 0.5rem;border:2px solid #f0e0e4;border-radius:12px;background:white;cursor:pointer;font-family:'Outfit',sans-serif;font-size:0.85rem;transition:all 0.2s;color:var(--mid); }
+.gender-btn.selected { border-color:var(--rose);background:var(--rose-light);color:var(--rose); }
+
+.interests-grid { display:flex;flex-wrap:wrap;gap:0.5rem; }
+.interest-tag { padding:0.4rem 0.85rem;border-radius:20px;border:2px solid #f0e0e4;background:white;cursor:pointer;font-size:0.8rem;color:var(--mid);transition:all 0.2s; }
+.interest-tag.selected { border-color:var(--rose);background:var(--rose-light);color:var(--rose); }
+
+.auth-switch { text-align:center;margin-top:1.5rem;color:var(--mid);font-size:0.9rem; }
+.auth-switch a { color:var(--rose);text-decoration:none;font-weight:600;cursor:pointer; }
+
+/* ── VERIFICATION ── */
+.verify-boxes { display:flex;gap:0.8rem;justify-content:center;margin:1.5rem 0; }
+.verify-box { width:52px;height:60px;border:2px solid #f0e0e4;border-radius:14px;text-align:center;font-size:1.5rem;font-weight:700;font-family:'Cormorant Garamond',serif;outline:none;transition:border-color 0.2s;color:var(--dark); }
+.verify-box:focus { border-color:var(--rose); }
+
+/* ── PHOTO UPLOAD ── */
+.photo-upload-area {
+  border:2px dashed #f0e0e4;border-radius:20px;padding:2rem;text-align:center;
+  cursor:pointer;transition:all 0.3s;background:#fafafa;position:relative;overflow:hidden;
+}
+.photo-upload-area:hover { border-color:var(--rose);background:var(--rose-light); }
+.photo-upload-area.has-photo { border-style:solid;border-color:var(--rose); }
+.photo-preview { width:100%;height:200px;object-fit:cover;border-radius:14px;display:none; }
+.photo-preview.visible { display:block; }
+.photo-upload-icon { font-size:2.5rem;margin-bottom:0.5rem; }
+.photo-upload-text { color:var(--mid);font-size:0.9rem; }
+.photo-upload-hint { color:#c8a8b0;font-size:0.78rem;margin-top:0.3rem; }
+#photo-file-input { position:absolute;inset:0;opacity:0;cursor:pointer; }
+
+/* ── APP LAYOUT ── */
+#app { display:none; }
+#app.active { display:block; }
+.app-layout { display:flex;min-height:100vh; }
+
+.sidebar { width:270px;background:white;border-right:1px solid #f0e0e4;display:flex;flex-direction:column;position:fixed;left:0;top:0;bottom:0;z-index:100;padding:1.5rem; }
+.sidebar-logo { display:flex;align-items:center;gap:0.7rem;margin-bottom:2rem;padding-bottom:1.5rem;border-bottom:1px solid #f0e0e4; }
+.sidebar-logo-icon { font-size:1.8rem; }
+.sidebar-logo-text { font-family:'Cormorant Garamond',serif;font-size:1.5rem;color:var(--dark); }
+
+.nav-item { display:flex;align-items:center;gap:0.8rem;padding:0.8rem 1rem;border-radius:14px;cursor:pointer;margin-bottom:0.3rem;color:var(--mid);font-weight:500;transition:all 0.2s; }
+.nav-item:hover { background:var(--light);color:var(--dark); }
+.nav-item.active { background:var(--rose);color:white; }
+.nav-icon { font-size:1.2rem;width:24px;text-align:center; }
+
+.sidebar-user { margin-top:auto;padding-top:1.5rem;border-top:1px solid #f0e0e4;display:flex;align-items:center;gap:0.8rem; }
+.sidebar-avatar { width:44px;height:44px;border-radius:50%;object-fit:cover;flex-shrink:0;background:var(--light);display:flex;align-items:center;justify-content:center;font-size:1.3rem; }
+.sidebar-avatar img { width:100%;height:100%;border-radius:50%;object-fit:cover; }
+.sidebar-user-name { font-weight:600;font-size:0.9rem;color:var(--dark);white-space:nowrap;overflow:hidden;text-overflow:ellipsis; }
+.sidebar-user-uni { font-size:0.75rem;color:var(--mid); }
+
+.main-content { margin-left:270px;flex:1;padding:2rem; }
+.section { display:none; }
+.section.active { display:block; }
+.page-title { font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:var(--dark);margin-bottom:0.3rem; }
+.page-subtitle { color:var(--mid);margin-bottom:2rem;font-size:0.95rem; }
+
+/* ── SWIPE SECTION ── */
+.swipe-container { display:flex;flex-direction:column;align-items:center;gap:1.5rem; }
+
+.swipe-stack { position:relative;width:100%;max-width:400px;height:560px; }
+
+.swipe-card {
+  position:absolute;inset:0;
+  background:white;border-radius:28px;box-shadow:var(--shadow);
+  overflow:hidden;cursor:grab;user-select:none;
+  transition:transform 0.05s ease;
+  touch-action:none;
+}
+.swipe-card:active { cursor:grabbing; }
+.swipe-card.behind { transform:scale(0.95) translateY(16px);z-index:0;pointer-events:none; }
+.swipe-card.top { z-index:10; }
+.swipe-card.animating-left {
+  animation:swipeLeft 0.4s ease forwards;
+}
+.swipe-card.animating-right {
+  animation:swipeRight 0.4s ease forwards;
+}
+@keyframes swipeLeft { to{transform:translateX(-120%) rotate(-25deg);opacity:0} }
+@keyframes swipeRight { to{transform:translateX(120%) rotate(25deg);opacity:0} }
+
+.swipe-photo {
+  width:100%;height:360px;object-fit:cover;
+  background:linear-gradient(135deg,var(--light),#ffd6de);
+  display:flex;align-items:center;justify-content:center;font-size:8rem;
+  pointer-events:none;
+}
+.swipe-photo img { width:100%;height:100%;object-fit:cover; }
+
+.swipe-gradient { position:absolute;bottom:0;left:0;right:0;height:220px;background:linear-gradient(transparent,rgba(26,15,18,0.85));pointer-events:none; }
+
+.swipe-info { position:absolute;bottom:0;left:0;right:0;padding:1.5rem;color:white; }
+.swipe-name { font-family:'Cormorant Garamond',serif;font-size:2rem;font-weight:600;line-height:1; }
+.swipe-meta { font-size:0.85rem;opacity:0.8;margin:0.3rem 0 0.6rem; }
+.swipe-tags { display:flex;flex-wrap:wrap;gap:0.4rem; }
+.swipe-tag { background:rgba(255,255,255,0.2);backdrop-filter:blur(4px);border-radius:20px;padding:0.2rem 0.7rem;font-size:0.75rem; }
+
+.swipe-label {
+  position:absolute;top:1.5rem;padding:0.4rem 1rem;border-radius:8px;
+  font-weight:700;font-size:1.1rem;letter-spacing:0.05em;
+  opacity:0;transition:opacity 0.1s;transform:rotate(-10deg);border:3px solid;
+}
+.swipe-label.like { left:1.5rem;color:#4caf50;border-color:#4caf50;transform:rotate(-10deg); }
+.swipe-label.nope { right:1.5rem;color:var(--rose);border-color:var(--rose);transform:rotate(10deg); }
+
+.swipe-buttons { display:flex;gap:1.2rem;justify-content:center;align-items:center; }
+.swipe-btn {
+  width:60px;height:60px;border-radius:50%;border:none;cursor:pointer;
+  display:flex;align-items:center;justify-content:center;font-size:1.6rem;
+  transition:all 0.3s;box-shadow:0 4px 20px rgba(0,0,0,0.1);
+}
+.swipe-btn-pass { background:white;color:var(--rose); }
+.swipe-btn-pass:hover { background:var(--rose-light);transform:scale(1.1); }
+.swipe-btn-like { background:var(--rose);color:white;width:72px;height:72px;font-size:2rem;box-shadow:0 6px 24px rgba(232,99,122,0.4); }
+.swipe-btn-like:hover { background:var(--rose-dark);transform:scale(1.1); }
+.swipe-btn-super { background:white;color:var(--gold); }
+.swipe-btn-super:hover { background:#fff8e8;transform:scale(1.1); }
+
+.swipe-progress { display:flex;gap:0.4rem;margin-bottom:0.5rem; }
+.swipe-dot { width:8px;height:8px;border-radius:50%;background:var(--light);transition:background 0.3s; }
+.swipe-dot.active { background:var(--rose); }
+
+.match-popup {
+  position:fixed;inset:0;background:rgba(26,15,18,0.85);z-index:999;
+  display:flex;align-items:center;justify-content:center;
+  opacity:0;pointer-events:none;transition:opacity 0.4s;
+}
+.match-popup.show { opacity:1;pointer-events:all; }
+.match-popup-inner {
+  background:white;border-radius:32px;padding:3rem;text-align:center;
+  max-width:360px;width:90%;transform:scale(0.8);transition:transform 0.4s;
+}
+.match-popup.show .match-popup-inner { transform:scale(1); }
+.match-popup-hearts { font-size:3.5rem;animation:heartbeat 1.5s infinite; }
+@keyframes heartbeat { 0%,100%{transform:scale(1)} 50%{transform:scale(1.15)} }
+.match-popup-title { font-family:'Cormorant Garamond',serif;font-size:2.2rem;color:var(--rose);margin:0.5rem 0; }
+.match-popup-avatars { display:flex;justify-content:center;align-items:center;gap:-1rem;margin:1.5rem 0; }
+.match-avatar-circle { width:80px;height:80px;border-radius:50%;border:4px solid white;box-shadow:var(--shadow);overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--light); }
+.match-avatar-circle img { width:100%;height:100%;object-fit:cover; }
+.match-avatar-circle:last-child { margin-left:-20px; }
+
+/* ── DISCOVER GRID ── */
+.profiles-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:1.5rem; }
+.profile-card { background:white;border-radius:20px;overflow:hidden;box-shadow:var(--shadow);transition:transform 0.3s,box-shadow 0.3s;cursor:pointer; }
+.profile-card:hover { transform:translateY(-6px);box-shadow:var(--shadow-hover); }
+.card-image { height:200px;display:flex;align-items:center;justify-content:center;position:relative;overflow:hidden;background:var(--light); }
+.card-image img { width:100%;height:100%;object-fit:cover; }
+.card-image-emoji { font-size:5rem; }
+.card-badge { position:absolute;top:10px;right:10px;background:white;border-radius:20px;padding:0.25rem 0.7rem;font-size:0.75rem;font-weight:600;color:var(--rose);box-shadow:0 2px 10px rgba(0,0,0,0.1); }
+.card-body { padding:1.2rem; }
+.card-name { font-family:'Cormorant Garamond',serif;font-size:1.3rem;color:var(--dark); }
+.card-info { font-size:0.82rem;color:var(--mid);margin:0.2rem 0 0.8rem; }
+.card-tags { display:flex;flex-wrap:wrap;gap:0.4rem;margin-bottom:0.8rem; }
+.card-tag { font-size:0.72rem;padding:0.2rem 0.6rem;background:var(--light);border-radius:20px;color:var(--mid); }
+.card-actions { display:flex;gap:0.6rem; }
+.card-btn { flex:1;padding:0.6rem;border-radius:10px;border:none;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600;font-size:0.85rem;transition:all 0.2s; }
+.card-btn-like { background:var(--rose);color:white; }
+.card-btn-like:hover { background:var(--rose-dark); }
+.card-btn-skip { background:var(--light);color:var(--mid); }
+.card-btn-skip:hover { background:#e8c8d0; }
+
+/* ── MATCHES ── */
+.matches-list { display:flex;flex-direction:column;gap:1rem; }
+.match-item { background:white;border-radius:16px;padding:1.2rem;display:flex;align-items:center;gap:1rem;box-shadow:var(--shadow);cursor:pointer;transition:transform 0.2s; }
+.match-item:hover { transform:translateX(5px); }
+.match-item-avatar { width:56px;height:56px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.8rem;background:var(--light); }
+.match-item-avatar img { width:100%;height:100%;object-fit:cover; }
+.match-name { font-weight:600;color:var(--dark); }
+.match-preview { font-size:0.85rem;color:var(--mid); }
+.match-time { font-size:0.75rem;color:#c0a0aa; }
+.match-unread { background:var(--rose);color:white;border-radius:50%;width:22px;height:22px;display:flex;align-items:center;justify-content:center;font-size:0.72rem;font-weight:700; }
+
+/* ── CHAT ── */
+.chat-layout { display:grid;grid-template-columns:280px 1fr;gap:1.5rem;height:calc(100vh - 8rem); }
+.chat-list { background:white;border-radius:20px;overflow-y:auto;box-shadow:var(--shadow); }
+.chat-list-header { padding:1.2rem;border-bottom:1px solid #f0e0e4;font-weight:700;color:var(--dark); }
+.chat-list-item { padding:1rem 1.2rem;display:flex;align-items:center;gap:0.8rem;cursor:pointer;border-bottom:1px solid #faf0f2;transition:background 0.2s; }
+.chat-list-item:hover { background:var(--rose-light); }
+.chat-list-item.active { background:var(--rose-light); }
+.cli-avatar { width:44px;height:44px;border-radius:50%;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:var(--light); }
+.cli-avatar img { width:100%;height:100%;object-fit:cover; }
+.cli-name { font-weight:600;font-size:0.9rem;color:var(--dark); }
+.cli-preview { font-size:0.8rem;color:var(--mid);white-space:nowrap;overflow:hidden;text-overflow:ellipsis;max-width:150px; }
+
+.chat-window { background:white;border-radius:20px;box-shadow:var(--shadow);overflow:hidden;display:flex;flex-direction:column; }
+.chat-header { padding:1.2rem 1.5rem;border-bottom:1px solid #f0e0e4;display:flex;align-items:center;gap:1rem; }
+.chat-header-avatar { width:44px;height:44px;border-radius:50%;overflow:hidden;display:flex;align-items:center;justify-content:center;font-size:1.4rem;background:var(--light); }
+.chat-header-avatar img { width:100%;height:100%;object-fit:cover; }
+.chat-header-name { font-weight:700;color:var(--dark); }
+.chat-header-status { font-size:0.8rem;color:var(--green); }
+.chat-messages { flex:1;overflow-y:auto;padding:1.5rem;display:flex;flex-direction:column;gap:1rem; }
+.msg { max-width:72%;display:flex;flex-direction:column; }
+.msg.sent { align-self:flex-end;align-items:flex-end; }
+.msg.recv { align-self:flex-start; }
+.msg-bubble { padding:0.8rem 1.1rem;border-radius:18px;font-size:0.95rem;line-height:1.55; }
+.msg.sent .msg-bubble { background:var(--rose);color:white;border-bottom-right-radius:4px; }
+.msg.recv .msg-bubble { background:var(--light);color:var(--dark);border-bottom-left-radius:4px; }
+.msg-time { font-size:0.72rem;color:#c0a0aa;margin-top:0.3rem; }
+.chat-input-area { padding:1rem 1.5rem;border-top:1px solid #f0e0e4;display:flex;gap:0.8rem;align-items:center; }
+.chat-input { flex:1;padding:0.8rem 1.2rem;border-radius:25px;border:2px solid #f0e0e4;outline:none;font-family:'Outfit',sans-serif;font-size:0.95rem;transition:border-color 0.2s; }
+.chat-input:focus { border-color:var(--rose); }
+.chat-send { width:44px;height:44px;border-radius:50%;background:var(--rose);border:none;cursor:pointer;display:flex;align-items:center;justify-content:center;font-size:1.1rem;transition:all 0.2s;color:white; }
+.chat-send:hover { background:var(--rose-dark);transform:scale(1.08); }
+
+/* ── PROFILE ── */
+.profile-hero { background:white;border-radius:24px;padding:2rem;box-shadow:var(--shadow);display:flex;gap:2rem;align-items:flex-start;margin-bottom:1.5rem;flex-wrap:wrap; }
+.profile-big-avatar { width:130px;height:130px;border-radius:24px;overflow:hidden;flex-shrink:0;display:flex;align-items:center;justify-content:center;font-size:4.5rem;background:var(--light); }
+.profile-big-avatar img { width:100%;height:100%;object-fit:cover; }
+.profile-section-card { background:white;border-radius:20px;padding:1.5rem;box-shadow:var(--shadow);margin-bottom:1.2rem; }
+.profile-section-title { font-weight:700;color:var(--dark);margin-bottom:1rem;font-size:1rem; }
+
+/* ── ADMIN ── */
+.admin-badge { background:linear-gradient(135deg,var(--gold),#e8a030);color:white;font-size:0.7rem;font-weight:700;padding:0.2rem 0.6rem;border-radius:20px;margin-left:0.5rem; }
+.stats-grid { display:grid;grid-template-columns:repeat(auto-fill,minmax(160px,1fr));gap:1rem;margin-bottom:2rem; }
+.stat-card { background:white;border-radius:16px;padding:1.5rem;box-shadow:var(--shadow);text-align:center; }
+.stat-number { font-family:'Cormorant Garamond',serif;font-size:2.5rem;color:var(--rose); }
+.stat-label { color:var(--mid);font-size:0.82rem;margin-top:0.3rem; }
+.admin-table-card { background:white;border-radius:20px;padding:1.5rem;box-shadow:var(--shadow);margin-bottom:1.5rem; }
+.admin-table-title { font-weight:700;color:var(--dark);margin-bottom:1rem;font-size:1.05rem; }
+table { width:100%;border-collapse:collapse; }
+th { text-align:left;padding:0.7rem 1rem;font-size:0.78rem;color:var(--mid);font-weight:600;border-bottom:2px solid var(--light); }
+td { padding:0.9rem 1rem;font-size:0.88rem;border-bottom:1px solid #f5eef0;color:var(--dark); }
+tr:last-child td { border-bottom:none; }
+.status-badge { display:inline-block;padding:0.25rem 0.7rem;border-radius:20px;font-size:0.72rem;font-weight:600; }
+.status-active { background:#e8f5e9;color:#2e7d32; }
+.status-pending { background:#fff3e0;color:#e65100; }
+.status-banned { background:#fce4ec;color:#c62828; }
+.action-btn { padding:0.3rem 0.8rem;border-radius:8px;border:none;cursor:pointer;font-size:0.78rem;font-weight:600;font-family:'Outfit',sans-serif;margin-right:0.3rem;transition:all 0.2s; }
+.action-approve { background:#e8f5e9;color:#2e7d32; }
+.action-ban { background:#fce4ec;color:#c62828; }
+.action-delete { background:#f5f5f5;color:#666; }
+
+/* ── MOBILE NAV ── */
+.mobile-nav { display:none;position:fixed;bottom:0;left:0;right:0;background:white;border-top:1px solid #f0e0e4;padding:0.6rem;z-index:200;justify-content:space-around; }
+.mobile-nav-btn { display:flex;flex-direction:column;align-items:center;gap:0.2rem;background:none;border:none;cursor:pointer;color:var(--mid);font-size:0.62rem;padding:0.3rem 0.7rem;border-radius:10px;transition:all 0.2s; }
+.mobile-nav-btn.active { color:var(--rose); }
+.mobile-nav-icon { font-size:1.3rem; }
+
+/* ── TOAST ── */
+.toast { position:fixed;bottom:2rem;right:2rem;background:var(--dark);color:white;padding:1rem 1.5rem;border-radius:14px;box-shadow:0 8px 30px rgba(0,0,0,0.2);z-index:9999;font-size:0.9rem;transform:translateY(100px);opacity:0;transition:all 0.3s ease; }
+.toast.show { transform:translateY(0);opacity:1; }
+.toast.success { border-left:4px solid var(--green); }
+.toast.error { border-left:4px solid var(--rose); }
+.toast.info { border-left:4px solid var(--gold); }
+
+/* ── MODAL ── */
+.modal-overlay { position:fixed;inset:0;background:rgba(26,15,18,0.75);z-index:500;display:flex;align-items:center;justify-content:center;padding:1rem;opacity:0;pointer-events:none;transition:opacity 0.3s; }
+.modal-overlay.open { opacity:1;pointer-events:all; }
+.modal { background:white;border-radius:28px;padding:2rem;max-width:500px;width:100%;max-height:90vh;overflow-y:auto;transform:scale(0.9);transition:transform 0.3s; }
+.modal-overlay.open .modal { transform:scale(1); }
+.modal-title { font-family:'Cormorant Garamond',serif;font-size:1.8rem;margin-bottom:1.5rem; }
+.modal-close { float:right;background:none;border:none;font-size:1.5rem;cursor:pointer;color:var(--mid); }
+
+.filter-bar { display:flex;gap:1rem;margin-bottom:1.5rem;flex-wrap:wrap; }
+.search-bar { flex:1;padding:0.6rem 1rem;border:2px solid #f0e0e4;border-radius:10px;font-family:'Outfit',sans-serif;outline:none;min-width:200px; }
+.search-bar:focus { border-color:var(--rose); }
+.filter-select { padding:0.6rem 1rem;border:2px solid #f0e0e4;border-radius:10px;font-family:'Outfit',sans-serif;color:var(--mid);background:white;outline:none;cursor:pointer; }
+
+.empty-state { text-align:center;padding:4rem 2rem;color:var(--mid); }
+.empty-icon { font-size:3.5rem;margin-bottom:1rem; }
+.empty-state h3 { font-family:'Cormorant Garamond',serif;font-size:1.5rem;margin-bottom:0.5rem;color:var(--dark); }
+
+.https-badge { display:inline-flex;align-items:center;gap:0.3rem;background:#e8f5e9;color:#2e7d32;padding:0.2rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:600; }
+.verified-badge { display:inline-flex;align-items:center;gap:0.3rem;background:#e3f2fd;color:#1565c0;padding:0.2rem 0.7rem;border-radius:20px;font-size:0.75rem;font-weight:600; }
+
+.profile-edit-btn { background:var(--light);border:none;color:var(--mid);border-radius:10px;padding:0.6rem 1.2rem;cursor:pointer;font-family:'Outfit',sans-serif;font-weight:600; }
+
+/* step indicator */
+.step-indicator { display:flex;gap:0.5rem;justify-content:center;margin-bottom:1.5rem; }
+.step-dot { width:8px;height:8px;border-radius:50%;background:#f0e0e4;transition:background 0.3s; }
+.step-dot.active { background:var(--rose); }
+
+@media (max-width:900px) {
+  .chat-layout { grid-template-columns:1fr; }
+  .chat-list { display:none; }
+}
+@media (max-width:768px) {
+  .sidebar { display:none; }
+  .main-content { margin-left:0;padding:1rem 1rem 6rem; }
+  .mobile-nav { display:flex; }
+  .form-row { grid-template-columns:1fr; }
+  .profile-hero { flex-direction:column; }
+  .swipe-stack { height:500px; }
+}
+</style>
+</head>
+<body>
+
+<!-- ══════════════ LANDING ══════════════ -->
+<div id="landing" class="page active">
+  <div class="grain"></div>
+  <div class="orb orb1"></div><div class="orb orb2"></div><div class="orb orb3"></div>
+  <div class="landing-content">
+    <div class="brand-mark"><div class="brand-dot"></div> University Exclusive Dating</div>
+    <h1 class="landing-title">Find Your<br><em>Campus Love</em></h1>
+    <p class="landing-sub">Match with students who share your classes, passions, and late-night library sessions. Real connections, verified students only.</p>
+    <div class="btn-group">
+      <button class="btn btn-primary" onclick="showPage('register')">Start Matching 💗</button>
+      <button class="btn btn-outline" onclick="showPage('login')">Sign In</button>
+    </div>
+    <div class="features-row">
+      <div class="feature-pill">🔒 HTTPS Secured</div>
+      <div class="feature-pill">📧 Email Verified</div>
+      <div class="feature-pill">👆 Swipe to Match</div>
+      <div class="feature-pill">📸 Photo Profiles</div>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ LOGIN ══════════════ -->
+<div id="login" class="page auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">💗</div>
+      <h2 class="auth-title">Welcome Back</h2>
+      <p class="auth-sub">Sign in to your UniMatch account</p>
+    </div>
+    <div class="form-group">
+      <label class="form-label">University Email</label>
+      <input class="form-input" type="email" id="login-email" placeholder="you@university.edu">
+    </div>
+    <div class="form-group">
+      <label class="form-label">Password</label>
+      <input class="form-input" type="password" id="login-password" placeholder="••••••••">
+    </div>
+    <button class="btn btn-primary btn-full" onclick="handleLogin()">Sign In Securely 🔒</button>
+    <div class="auth-switch">Don't have an account? <a onclick="showPage('register')">Create one</a></div>
+    <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--mid)">
+      Admin? <a onclick="fillAdmin()" style="color:var(--gold);cursor:pointer;font-weight:600;">Admin Login →</a>
+    </div>
+  </div>
+</div>
+
+<!-- ══════════════ REGISTER (multi-step) ══════════════ -->
+<div id="register" class="page auth-page">
+  <div class="auth-card">
+    <div class="auth-header">
+      <div class="auth-logo">💗</div>
+      <h2 class="auth-title">Join UniMatch</h2>
+      <p class="auth-sub">Meet students from your campus</p>
+    </div>
+    <div class="step-indicator">
+      <div class="step-dot active" id="sd1"></div>
+      <div class="step-dot" id="sd2"></div>
+      <div class="step-dot" id="sd3"></div>
+      <div class="step-dot" id="sd4"></div>
+    </div>
+
+    <!-- Step 1: Basic info -->
+    <div id="reg-s1">
+      <div class="form-row">
+        <div class="form-group"><label class="form-label">First Name</label><input class="form-input" id="reg-fname" placeholder="Jane"></div>
+        <div class="form-group"><label class="form-label">Last Name</label><input class="form-input" id="reg-lname" placeholder="Smith"></div>
+      </div>
+      <div class="form-group"><label class="form-label">University Email</label><input class="form-input" type="email" id="reg-email" placeholder="jane@university.edu"></div>
+      <div class="form-group"><label class="form-label">Password (min 8 chars)</label><input class="form-input" type="password" id="reg-password" placeholder="••••••••"></div>
+      <button class="btn btn-primary btn-full" onclick="regStep1()">Continue →</button>
+    </div>
+
+    <!-- Step 2: Email verification -->
+    <div id="reg-s2" style="display:none;">
+      <div style="text-align:center;padding:1rem 0;">
+        <div style="font-size:3rem;margin-bottom:1rem;">📧</div>
+        <p style="color:var(--mid);margin-bottom:0.3rem;">We sent a 6-digit code to</p>
+        <strong id="verify-email-display" style="color:var(--rose)">your@email.edu</strong>
+        <p style="font-size:0.82rem;color:var(--mid);margin-top:0.5rem;">(Demo: code is <strong>123456</strong>)</p>
+      </div>
+      <div class="verify-boxes">
+        <input class="verify-box" maxlength="1" id="v0" oninput="moveVerify(0)" onkeydown="backVerify(event,0)">
+        <input class="verify-box" maxlength="1" id="v1" oninput="moveVerify(1)" onkeydown="backVerify(event,1)">
+        <input class="verify-box" maxlength="1" id="v2" oninput="moveVerify(2)" onkeydown="backVerify(event,2)">
+        <input class="verify-box" maxlength="1" id="v3" oninput="moveVerify(3)" onkeydown="backVerify(event,3)">
+        <input class="verify-box" maxlength="1" id="v4" oninput="moveVerify(4)" onkeydown="backVerify(event,4)">
+        <input class="verify-box" maxlength="1" id="v5" oninput="moveVerify(5)" onkeydown="backVerify(event,5)">
+      </div>
+      <button class="btn btn-primary btn-full" onclick="regStep2()">Verify Email ✅</button>
+      <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--mid)">
+        Didn't get it? <a style="color:var(--rose);cursor:pointer" onclick="toast('Code resent! (Demo: 123456)','info')">Resend code</a>
+      </div>
+    </div>
+
+    <!-- Step 3: Profile details -->
+    <div id="reg-s3" style="display:none;">
+      <div class="form-group"><label class="form-label">University / Campus</label><input class="form-input" id="reg-uni" placeholder="State University"></div>
+      <div class="form-group"><label class="form-label">Department / Course</label><input class="form-input" id="reg-dept" placeholder="Computer Science"></div>
+      <div class="form-group">
+        <label class="form-label">I am a...</label>
+        <div class="gender-select">
+          <button class="gender-btn" onclick="selectGender(this,'woman')">👩 Woman</button>
+          <button class="gender-btn" onclick="selectGender(this,'man')">👨 Man</button>
+          <button class="gender-btn" onclick="selectGender(this,'nonbinary')">🧑 Non-binary</button>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Looking to meet...</label>
+        <div class="gender-select">
+          <button class="gender-btn" onclick="selectPref(this,'women')">👩 Women</button>
+          <button class="gender-btn" onclick="selectPref(this,'men')">👨 Men</button>
+          <button class="gender-btn" onclick="selectPref(this,'everyone')">💫 Everyone</button>
+        </div>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="regStep3()">Continue →</button>
+    </div>
+
+    <!-- Step 4: Photo + interests + bio -->
+    <div id="reg-s4" style="display:none;">
+      <div class="form-group">
+        <label class="form-label">Profile Photo</label>
+        <div class="photo-upload-area" id="reg-photo-area">
+          <input type="file" accept="image/*" id="reg-photo-input" onchange="handlePhotoUpload('reg')">
+          <img class="photo-preview" id="reg-photo-preview" src="" alt="">
+          <div id="reg-photo-placeholder">
+            <div class="photo-upload-icon">📷</div>
+            <div class="photo-upload-text">Click to upload your photo</div>
+            <div class="photo-upload-hint">JPG, PNG up to 5MB</div>
+          </div>
+        </div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Your Interests</label>
+        <div class="interests-grid" id="reg-interests-grid"></div>
+      </div>
+      <div class="form-group">
+        <label class="form-label">Short Bio</label>
+        <textarea class="form-input" id="reg-bio" rows="3" placeholder="Tell others something fun about you..."></textarea>
+      </div>
+      <button class="btn btn-primary btn-full" onclick="handleRegister()">Create My Profile 💗</button>
+    </div>
+
+    <div class="auth-switch">Already have an account? <a onclick="showPage('login')">Sign in</a></div>
+  </div>
+</div>
+
+<!-- ══════════════ MAIN APP ══════════════ -->
+<div id="app">
+  <div class="app-layout">
+    <aside class="sidebar">
+      <div class="sidebar-logo">
+        <span class="sidebar-logo-icon">💗</span>
+        <span class="sidebar-logo-text">UniMatch</span>
+      </div>
+      <nav>
+        <div class="nav-item active" onclick="switchSection('swipe',this)"><span class="nav-icon">👆</span> Swipe</div>
+        <div class="nav-item" onclick="switchSection('discover',this)"><span class="nav-icon">🔍</span> Discover</div>
+        <div class="nav-item" onclick="switchSection('matches',this)"><span class="nav-icon">💞</span> Matches</div>
+        <div class="nav-item" onclick="switchSection('chat',this)"><span class="nav-icon">💌</span> Messages</div>
+        <div class="nav-item" onclick="switchSection('profile',this)"><span class="nav-icon">👤</span> Profile</div>
+        <div class="nav-item" id="admin-nav" style="display:none" onclick="switchSection('admin',this)">
+          <span class="nav-icon">⚙️</span> Admin <span class="admin-badge">OWNER</span>
+        </div>
+      </nav>
+      <div class="sidebar-user">
+        <div class="sidebar-avatar" id="sidebar-avatar-wrap">
+          <img id="sidebar-avatar-img" src="" alt="" style="display:none;width:100%;height:100%;border-radius:50%;object-fit:cover;">
+          <span id="sidebar-avatar-emoji">😊</span>
+        </div>
+        <div style="flex:1;min-width:0;">
+          <div class="sidebar-user-name" id="sidebar-name">Loading...</div>
+          <div class="sidebar-user-uni" id="sidebar-uni">University</div>
+        </div>
+        <button onclick="logout()" title="Logout" style="background:none;border:none;cursor:pointer;color:var(--mid);font-size:1.1rem;">🚪</button>
+      </div>
+    </aside>
+
+    <main class="main-content">
+
+      <!-- SWIPE -->
+      <div id="section-swipe" class="section active">
+        <h1 class="page-title">Swipe 👆</h1>
+        <p class="page-subtitle">Swipe right to like, left to pass</p>
+        <div class="swipe-container">
+          <div class="swipe-progress" id="swipe-progress"></div>
+          <div class="swipe-stack" id="swipe-stack">
+            <div class="empty-state" id="swipe-empty" style="display:none">
+              <div class="empty-icon">🎉</div>
+              <h3>You've seen everyone!</h3>
+              <p>Check your matches or come back later</p>
+            </div>
+          </div>
+          <div class="swipe-buttons">
+            <button class="swipe-btn swipe-btn-pass" onclick="doSwipe('left')" title="Pass">✕</button>
+            <button class="swipe-btn swipe-btn-like" onclick="doSwipe('right')" title="Like">💗</button>
+            <button class="swipe-btn swipe-btn-super" onclick="doSwipe('super')" title="Super Like">⭐</button>
+          </div>
+          <p style="font-size:0.82rem;color:var(--mid);text-align:center;">← Pass &nbsp;|&nbsp; Like → &nbsp;|&nbsp; ⭐ Super Like</p>
+        </div>
+      </div>
+
+      <!-- DISCOVER -->
+      <div id="section-discover" class="section">
+        <h1 class="page-title">Discover 🔍</h1>
+        <p class="page-subtitle">Browse all students near you</p>
+        <div class="filter-bar">
+          <input class="search-bar" placeholder="🔍 Search name or interest..." oninput="filterProfiles(this.value)">
+          <select class="filter-select" onchange="filterGender(this.value)">
+            <option value="">All genders</option>
+            <option value="woman">Women</option>
+            <option value="man">Men</option>
+            <option value="nonbinary">Non-binary</option>
+          </select>
+        </div>
+        <div class="profiles-grid" id="profiles-grid"></div>
+      </div>
+
+      <!-- MATCHES -->
+      <div id="section-matches" class="section">
+        <h1 class="page-title">Matches 💞</h1>
+        <p class="page-subtitle">People who liked you back</p>
+        <div class="matches-list" id="matches-list"></div>
+      </div>
+
+      <!-- CHAT -->
+      <div id="section-chat" class="section">
+        <h1 class="page-title">Messages 💌</h1>
+        <div class="chat-layout">
+          <div class="chat-list">
+            <div class="chat-list-header">Conversations</div>
+            <div id="chat-list-items"></div>
+          </div>
+          <div class="chat-window">
+            <div class="chat-header">
+              <div class="chat-header-avatar" id="ch-avatar">💬</div>
+              <div>
+                <div class="chat-header-name" id="ch-name">Select a match</div>
+                <div class="chat-header-status">🟢 Online</div>
+              </div>
+            </div>
+            <div class="chat-messages" id="chat-messages">
+              <div class="empty-state"><div class="empty-icon">💌</div><h3>Pick a conversation</h3><p>Your matches are waiting!</p></div>
+            </div>
+            <div class="chat-input-area">
+              <input class="chat-input" id="chat-input" placeholder="Type a message..." onkeydown="if(event.key==='Enter')sendMsg()">
+              <button class="chat-send" onclick="sendMsg()">➤</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PROFILE -->
+      <div id="section-profile" class="section">
+        <h1 class="page-title">My Profile 👤</h1>
+        <div class="profile-hero">
+          <div class="profile-big-avatar" id="profile-big-avatar">
+            <img id="profile-photo-display" src="" alt="" style="display:none;">
+            <span id="profile-emoji-display">😊</span>
+          </div>
+          <div style="flex:1;">
+            <h2 style="font-family:'Cormorant Garamond',serif;font-size:2rem;" id="pf-name">Your Name</h2>
+            <p style="color:var(--mid);margin:0.3rem 0 0.8rem;" id="pf-meta">Dept • University</p>
+            <div style="display:flex;gap:0.5rem;flex-wrap:wrap;">
+              <span class="https-badge">🔒 Verified Student</span>
+              <span class="verified-badge">📧 Email Verified</span>
+            </div>
+            <div style="margin-top:1rem;display:flex;gap:0.8rem;">
+              <button class="profile-edit-btn" onclick="openEditModal()">✏️ Edit Profile</button>
+              <button class="profile-edit-btn" onclick="openPhotoModal()">📷 Change Photo</button>
+            </div>
+          </div>
+        </div>
+        <div class="profile-section-card">
+          <div class="profile-section-title">💬 Bio</div>
+          <p id="pf-bio" style="color:var(--mid);line-height:1.7;">Your bio will appear here...</p>
+        </div>
+        <div class="profile-section-card">
+          <div class="profile-section-title">🎯 Interests</div>
+          <div class="card-tags" id="pf-interests"></div>
+        </div>
+        <div class="profile-section-card">
+          <div class="profile-section-title">📊 My Stats</div>
+          <div style="display:flex;gap:2.5rem;flex-wrap:wrap;">
+            <div><strong style="font-size:1.8rem;color:var(--rose);" id="s-likes">0</strong><div style="color:var(--mid);font-size:0.82rem;">Likes Given</div></div>
+            <div><strong style="font-size:1.8rem;color:var(--rose);" id="s-matches">0</strong><div style="color:var(--mid);font-size:0.82rem;">Matches</div></div>
+            <div><strong style="font-size:1.8rem;color:var(--rose);" id="s-msgs">0</strong><div style="color:var(--mid);font-size:0.82rem;">Messages</div></div>
+          </div>
+        </div>
+        <button onclick="logout()" style="background:var(--light);border:none;border-radius:10px;padding:0.7rem 1.5rem;cursor:pointer;color:var(--mid);font-family:'Outfit',sans-serif;font-weight:600;">🚪 Sign Out</button>
+      </div>
+
+      <!-- ADMIN -->
+      <div id="section-admin" class="section">
+        <h1 class="page-title">Admin Panel <span class="admin-badge">OWNER</span></h1>
+        <p class="page-subtitle">Full control over UniMatch</p>
+        <div class="stats-grid">
+          <div class="stat-card"><div class="stat-number" id="a-users">0</div><div class="stat-label">Total Users</div></div>
+          <div class="stat-card"><div class="stat-number" id="a-active">0</div><div class="stat-label">Active</div></div>
+          <div class="stat-card"><div class="stat-number" id="a-verified">0</div><div class="stat-label">Verified</div></div>
+          <div class="stat-card"><div class="stat-number" id="a-matches">0</div><div class="stat-label">Matches</div></div>
+          <div class="stat-card"><div class="stat-number" id="a-msgs">0</div><div class="stat-label">Messages</div></div>
+          <div class="stat-card"><div class="stat-number" id="a-reports">2</div><div class="stat-label">Reports</div></div>
+        </div>
+        <div class="admin-table-card">
+          <div class="admin-table-title">👥 User Management</div>
+          <div class="filter-bar" style="margin-bottom:1rem;">
+            <input class="search-bar" placeholder="Search users..." oninput="adminSearch(this.value)">
+            <select class="filter-select" onchange="adminStatusFilter(this.value)">
+              <option value="">All</option><option value="active">Active</option><option value="pending">Pending</option><option value="banned">Banned</option>
+            </select>
+          </div>
+          <div style="overflow-x:auto;"><table><thead><tr><th>User</th><th>Email</th><th>University</th><th>Verified</th><th>Status</th><th>Actions</th></tr></thead><tbody id="admin-tbody"></tbody></table></div>
+        </div>
+        <div style="background:#fff8e1;border-radius:16px;padding:1.5rem;border-left:4px solid var(--gold);">
+          <strong>🔒 HTTPS Deployment</strong>
+          <p style="margin-top:0.5rem;color:var(--mid);font-size:0.88rem;">Host on <strong>Netlify</strong> or <strong>Vercel</strong> for free automatic HTTPS/SSL. Connect a custom domain for a professional look.</p>
+        </div>
+      </div>
+
+    </main>
+  </div>
+</div>
+
+<!-- Mobile Nav -->
+<nav class="mobile-nav" id="mobile-nav" style="display:none">
+  <button class="mobile-nav-btn active" onclick="switchSection('swipe',this,true)"><span class="mobile-nav-icon">👆</span>Swipe</button>
+  <button class="mobile-nav-btn" onclick="switchSection('discover',this,true)"><span class="mobile-nav-icon">🔍</span>Discover</button>
+  <button class="mobile-nav-btn" onclick="switchSection('matches',this,true)"><span class="mobile-nav-icon">💞</span>Matches</button>
+  <button class="mobile-nav-btn" onclick="switchSection('chat',this,true)"><span class="mobile-nav-icon">💌</span>Chat</button>
+  <button class="mobile-nav-btn" onclick="switchSection('profile',this,true)"><span class="mobile-nav-icon">👤</span>Me</button>
+</nav>
+
+<!-- Match Popup -->
+<div class="match-popup" id="match-popup">
+  <div class="match-popup-inner">
+    <div class="match-popup-hearts">💞</div>
+    <h2 class="match-popup-title">It's a Match!</h2>
+    <p style="color:var(--mid);margin-bottom:1rem;">You and <strong id="match-popup-name">Someone</strong> liked each other!</p>
+    <div class="match-popup-avatars">
+      <div class="match-avatar-circle" id="mp-you">😊</div>
+      <div class="match-avatar-circle" id="mp-them">😊</div>
+    </div>
+    <button class="btn btn-primary btn-full" onclick="closeMatch();switchSection('chat',document.querySelector('.nav-item:nth-child(4)'))">Send a Message 💌</button>
+    <button class="btn btn-outline btn-full" style="margin-top:0.6rem;color:var(--mid);border-color:#f0e0e4;" onclick="closeMatch()">Keep Swiping</button>
+  </div>
+</div>
+
+<!-- Edit Profile Modal -->
+<div class="modal-overlay" id="edit-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('edit-modal')">×</button>
+    <h2 class="modal-title">✏️ Edit Profile</h2>
+    <div class="form-group"><label class="form-label">Bio</label><textarea class="form-input" id="edit-bio" rows="4" placeholder="Tell others about yourself..."></textarea></div>
+    <div class="form-group"><label class="form-label">Department</label><input class="form-input" id="edit-dept"></div>
+    <div class="form-group"><label class="form-label">Interests</label><div class="interests-grid" id="edit-interests-grid"></div></div>
+    <button class="btn btn-primary btn-full" onclick="saveProfile()">Save Changes ✅</button>
+  </div>
+</div>
+
+<!-- Photo Modal -->
+<div class="modal-overlay" id="photo-modal">
+  <div class="modal">
+    <button class="modal-close" onclick="closeModal('photo-modal')">×</button>
+    <h2 class="modal-title">📷 Update Photo</h2>
+    <div class="photo-upload-area" id="modal-photo-area">
+      <input type="file" accept="image/*" id="modal-photo-input" onchange="handlePhotoUpload('modal')">
+      <img class="photo-preview" id="modal-photo-preview" src="" alt="">
+      <div id="modal-photo-placeholder">
+        <div class="photo-upload-icon">📷</div>
+        <div class="photo-upload-text">Click to choose a new photo</div>
+        <div class="photo-upload-hint">JPG, PNG up to 5MB</div>
+      </div>
+    </div>
+    <button class="btn btn-primary btn-full" style="margin-top:1rem;" onclick="savePhoto()">Save Photo</button>
+  </div>
+</div>
+
+<div class="toast" id="toast"></div>
+
+<script>
+// ══════════════════════════════════════════
+// CONFIG — Change admin credentials here!
+// ══════════════════════════════════════════
+const ADMIN_EMAIL = 'admin@unimatch.app';
+const ADMIN_PASS  = 'Admin@UniMatch2024!';
+
+const INTERESTS = ['Music','Yoga','Reading','Coffee','Gaming','Hiking','Photography','Cooking','Art','Travel','Film','Football','Volunteering','Podcasts','Entrepreneurship','Cycling','Robotics','Writing','Finance','Tennis','Debate','Dance','Sports','Animals','Nature','Tech'];
+
+// ══════ DB (localStorage) ══════
+const DB = {
+  get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
+  set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
+  del: k => localStorage.removeItem(k)
+};
+
+// ══════ STATE ══════
+let currentUser = null;
+let selectedGender = '', selectedPref = '', selectedInterests = [];
+let regPhotoData = '', modalPhotoData = '';
+let likes = [], matches = [], swipedIds = [];
+let msgs = {};
+let msgCount = 0;
+let activeChat = null;
+let swipeProfiles = [], swipeIndex = 0;
+let isDragging = false, startX = 0, startY = 0, currentX = 0;
+
+// ══════ SAMPLE DATA ══════
+const SAMPLES = [
+  {id:'s1',name:'Amara Johnson',emoji:'👩🏾',dept:'Psychology',uni:'State University',gender:'woman',interests:['Music','Yoga','Reading'],bio:"Psych student who loves understanding people. Let's grab coffee!",status:'active',joined:'2024-01-15',email:'amara@state.edu',verified:true,photo:''},
+  {id:'s2',name:'Leo Zhang',emoji:'👨🏻',dept:'Computer Science',uni:'Tech Institute',gender:'man',interests:['Gaming','Hiking','Photography'],bio:"CS student by day, amateur chef by night.",status:'active',joined:'2024-02-03',email:'leo@techins.edu',verified:true,photo:''},
+  {id:'s3',name:'Sofia Reyes',emoji:'👩🏽',dept:'Fine Arts',uni:'City College',gender:'woman',interests:['Art','Music','Travel'],bio:"Artist and filmmaker. Always seeking new adventures.",status:'active',joined:'2024-01-28',email:'sofia@citycollege.edu',verified:true,photo:''},
+  {id:'s4',name:'Marcus Williams',emoji:'👨🏿',dept:'Medicine',uni:'State University',gender:'man',interests:['Football','Volunteering','Reading'],bio:"Future doctor with a love for sports.",status:'active',joined:'2024-03-01',email:'marcus@state.edu',verified:true,photo:''},
+  {id:'s5',name:'Zara Ahmed',emoji:'👩🏽',dept:'Business',uni:'Commerce University',gender:'woman',interests:['Entrepreneurship','Yoga','Travel'],bio:"Aspiring entrepreneur. Let's build something great.",status:'active',joined:'2024-02-14',email:'zara@commerce.edu',verified:true,photo:''},
+  {id:'s6',name:'Tyler Kim',emoji:'🧑',dept:'Philosophy',uni:'Liberal Arts College',gender:'nonbinary',interests:['Reading','Film','Art'],bio:"Philosophy student who thinks too much.",status:'active',joined:'2024-01-20',email:'tyler@lac.edu',verified:true,photo:''},
+  {id:'s7',name:'Emma Costa',emoji:'👩🏼',dept:'Engineering',uni:'Tech Institute',gender:'woman',interests:['Robotics','Gaming','Music'],bio:"Engineer who breaks things to understand them.",status:'active',joined:'2024-03-10',email:'emma@techins.edu',verified:false,photo:''},
+  {id:'s8',name:'Jordan Parker',emoji:'👨🏼',dept:'Economics',uni:'Business Academy',gender:'man',interests:['Finance','Travel','Tennis'],bio:"Econ student who dreams of backpacking Asia.",status:'pending',joined:'2024-02-22',email:'jordan@bizac.edu',verified:false,photo:''},
+];
+
+// ══════ UTILS ══════
+function showPage(id) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  const el = document.getElementById(id);
+  el.classList.add('active');
+  document.getElementById('mobile-nav').style.display = (id==='app') ? 'flex' : 'none';
+}
+
+function toast(msg, type='info') {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'toast ' + type + ' show';
+  clearTimeout(t._t);
+  t._t = setTimeout(() => t.classList.remove('show'), 3000);
+}
+
+function closeModal(id) { document.getElementById(id).classList.remove('open'); }
+
+function switchSection(id, el, isMobile=false) {
+  document.querySelectorAll('.section').forEach(s => s.classList.remove('active'));
+  document.getElementById('section-'+id).classList.add('active');
+  if (isMobile) document.querySelectorAll('.mobile-nav-btn').forEach(b => b.classList.remove('active'));
+  else document.querySelectorAll('.nav-item').forEach(b => b.classList.remove('active'));
+  if (el) el.classList.add('active');
+  if (id==='swipe') initSwipe();
+  if (id==='discover') renderDiscover();
+  if (id==='matches') renderMatches();
+  if (id==='chat') renderChatList();
+  if (id==='profile') renderProfile();
+  if (id==='admin') renderAdmin();
+}
+
+function getUsers() { return DB.get('um_users') || []; }
+function saveUsers(u) { DB.set('um_users', u); }
+
+function getEmoji(g) {
+  const m = {woman:['👩','👩🏽','👩🏾','👩🏼','👩🏻'],man:['👨','👨🏽','👨🏾','👨🏼','👨🏻'],nonbinary:['🧑','🧑🏽','🧑🏻']};
+  const a = m[g] || m.nonbinary;
+  return a[Math.floor(Math.random()*a.length)];
+}
+
+function setStepDot(n) {
+  for(let i=1;i<=4;i++) {
+    const d = document.getElementById('sd'+i);
+    if(d) d.className = 'step-dot' + (i<=n?' active':'');
+  }
+}
+
+// ══════ PHOTO UPLOAD ══════
+function handlePhotoUpload(ctx) {
+  const input = document.getElementById(ctx==='reg' ? 'reg-photo-input' : 'modal-photo-input');
+  const preview = document.getElementById(ctx==='reg' ? 'reg-photo-preview' : 'modal-photo-preview');
+  const placeholder = document.getElementById(ctx==='reg' ? 'reg-photo-placeholder' : 'modal-photo-placeholder');
+  const area = document.getElementById(ctx==='reg' ? 'reg-photo-area' : 'modal-photo-area');
+  const file = input.files[0];
+  if (!file) return;
+  if (file.size > 5*1024*1024) return toast('Photo must be under 5MB','error');
+  const reader = new FileReader();
+  reader.onload = e => {
+    const data = e.target.result;
+    preview.src = data;
+    preview.classList.add('visible');
+    placeholder.style.display = 'none';
+    area.classList.add('has-photo');
+    if (ctx==='reg') regPhotoData = data;
+    else modalPhotoData = data;
+  };
+  reader.readAsDataURL(file);
+}
+
+function openPhotoModal() {
+  modalPhotoData = '';
+  document.getElementById('modal-photo-preview').classList.remove('visible');
+  document.getElementById('modal-photo-placeholder').style.display = 'block';
+  document.getElementById('photo-modal').classList.add('open');
+}
+
+function savePhoto() {
+  if (!modalPhotoData) return toast('Please select a photo first','error');
+  currentUser.photo = modalPhotoData;
+  updateUserInDB(currentUser);
+  updateSidebarAvatar();
+  closeModal('photo-modal');
+  renderProfile();
+  toast('Photo updated! 📷','success');
+}
+
+function updateSidebarAvatar() {
+  const img = document.getElementById('sidebar-avatar-img');
+  const em = document.getElementById('sidebar-avatar-emoji');
+  if (currentUser.photo) {
+    img.src = currentUser.photo;
+    img.style.display = 'block';
+    em.style.display = 'none';
+  } else {
+    img.style.display = 'none';
+    em.style.display = 'inline';
+    em.textContent = currentUser.emoji || '😊';
+  }
+}
+
+function updateUserInDB(user) {
+  const users = getUsers();
+  const i = users.findIndex(u => u.id === user.id);
+  if (i >= 0) users[i] = user;
+  saveUsers(users);
+  DB.set('um_me', user);
+}
+
+// ══════ VERIFICATION ══════
+function moveVerify(i) {
+  const cur = document.getElementById('v'+i);
+  if (cur.value && i < 5) document.getElementById('v'+(i+1)).focus();
+}
+function backVerify(e, i) {
+  if (e.key==='Backspace' && !document.getElementById('v'+i).value && i > 0) {
+    document.getElementById('v'+(i-1)).focus();
+  }
+}
+function getVerifyCode() {
+  return [0,1,2,3,4,5].map(i => document.getElementById('v'+i).value).join('');
+}
+
+// ══════ REGISTRATION ══════
+function regStep1() {
+  const fname = document.getElementById('reg-fname').value.trim();
+  const lname = document.getElementById('reg-lname').value.trim();
+  const email = document.getElementById('reg-email').value.trim();
+  const pass  = document.getElementById('reg-password').value;
+  if (!fname||!lname||!email) return toast('Please fill all fields','error');
+  if (!email.includes('@')) return toast('Enter a valid email','error');
+  if (pass.length < 8) return toast('Password must be at least 8 characters','error');
+  const existing = getUsers().find(u => u.email===email);
+  if (existing) return toast('Email already registered','error');
+  document.getElementById('verify-email-display').textContent = email;
+  document.getElementById('reg-s1').style.display='none';
+  document.getElementById('reg-s2').style.display='block';
+  setStepDot(2);
+  toast('Verification code sent! (Demo: 123456)','info');
+}
+
+function regStep2() {
+  const code = getVerifyCode();
+  if (code.length < 6) return toast('Enter the full 6-digit code','error');
+  if (code !== '123456') return toast('Incorrect code. (Demo: 123456)','error');
+  document.getElementById('reg-s2').style.display='none';
+  document.getElementById('reg-s3').style.display='block';
+  setStepDot(3);
+  toast('Email verified! ✅','success');
+}
+
+function regStep3() {
+  const uni  = document.getElementById('reg-uni').value.trim();
+  const dept = document.getElementById('reg-dept').value.trim();
+  if (!uni||!dept) return toast('Please fill all fields','error');
+  if (!selectedGender) return toast('Please select your gender','error');
+  selectedInterests = [];
+  renderInterestGrid('reg-interests-grid');
+  document.getElementById('reg-s3').style.display='none';
+  document.getElementById('reg-s4').style.display='block';
+  setStepDot(4);
+}
+
+function handleRegister() {
+  const user = {
+    id: 'u_'+Date.now(),
+    name: document.getElementById('reg-fname').value.trim()+' '+document.getElementById('reg-lname').value.trim(),
+    email: document.getElementById('reg-email').value.trim(),
+    password: document.getElementById('reg-password').value,
+    uni: document.getElementById('reg-uni').value.trim(),
+    dept: document.getElementById('reg-dept').value.trim(),
+    gender: selectedGender,
+    pref: selectedPref||'everyone',
+    interests: selectedInterests,
+    bio: document.getElementById('reg-bio').value.trim(),
+    photo: regPhotoData,
+    emoji: getEmoji(selectedGender),
+    status:'active', verified:true,
+    joined: new Date().toISOString().split('T')[0],
+    isAdmin:false
+  };
+  const users = getUsers();
+  users.push(user);
+  saveUsers(users);
+  currentUser = user;
+  DB.set('um_me', user);
+  toast('Welcome to UniMatch! 💗','success');
+  initApp();
+}
+
+// ══════ LOGIN ══════
+function handleLogin() {
+  const email = document.getElementById('login-email').value.trim();
+  const pass  = document.getElementById('login-password').value;
+  if (email===ADMIN_EMAIL && pass===ADMIN_PASS) {
+    currentUser = {id:'admin',name:'Admin',email:ADMIN_EMAIL,uni:'UniMatch HQ',dept:'Administration',emoji:'⚙️',isAdmin:true,photo:''};
+    DB.set('um_me', currentUser);
+    initApp(); return;
+  }
+  const users = getUsers();
+  const user = users.find(u => u.email===email && u.password===pass);
+  if (!user) return toast('Wrong email or password','error');
+  if (user.status==='banned') return toast('Account suspended','error');
+  currentUser = user;
+  DB.set('um_me', currentUser);
+  initApp();
+}
+function fillAdmin() {
+  document.getElementById('login-email').value = ADMIN_EMAIL;
+  document.getElementById('login-password').value = ADMIN_PASS;
+  toast('Admin credentials filled!','info');
+}
+function logout() {
+  DB.del('um_me');
+  currentUser=null; likes=[]; matches=[]; swipedIds=[]; msgs={}; msgCount=0;
+  showPage('landing');
+}
+
+// ══════ INIT ══════
+function initApp() {
+  let users = getUsers();
+  if (!users.find(u=>u.id==='s1')) {
+    SAMPLES.forEach(s=>s.password='sample123');
+    users = [...SAMPLES, ...users];
+    saveUsers(users);
+  }
+  likes       = DB.get('um_likes_'+currentUser.id) || [];
+  matches     = DB.get('um_matches_'+currentUser.id) || [];
+  swipedIds   = DB.get('um_swiped_'+currentUser.id) || [];
+  msgs        = DB.get('um_msgs_'+currentUser.id) || {};
+  msgCount    = Object.values(msgs).flat().filter(m=>m.sent).length;
+
+  document.getElementById('sidebar-name').textContent = currentUser.name;
+  document.getElementById('sidebar-uni').textContent  = currentUser.uni;
+  updateSidebarAvatar();
+  if (currentUser.isAdmin) document.getElementById('admin-nav').style.display='flex';
+
+  document.getElementById('app').style.display='block';
+  showPage('app');
+  initSwipe();
+}
+
+// ══════ SWIPE ══════
+function getSwipeProfiles() {
+  return getUsers().filter(u => u.id!==currentUser.id && u.status==='active' && !u.isAdmin && !swipedIds.includes(u.id));
+}
+
+function initSwipe() {
+  swipeProfiles = getSwipeProfiles();
+  swipeIndex = 0;
+  renderSwipeStack();
+}
+
+function renderSwipeStack() {
+  const stack = document.getElementById('swipe-stack');
+  const empty = document.getElementById('swipe-empty');
+  const progress = document.getElementById('swipe-progress');
+
+  // Progress dots
+  const total = Math.min(swipeProfiles.length, 8);
+  progress.innerHTML = Array.from({length:total},(_,i)=>`<div class="swipe-dot${i===swipeIndex?'active':''}"></div>`).join('');
+
+  // Remove old cards
+  stack.querySelectorAll('.swipe-card').forEach(c=>c.remove());
+
+  if (swipeProfiles.length === 0) {
+    empty.style.display='block'; return;
+  }
+  empty.style.display='none';
+
+  // Render top 2 cards
+  const toRender = swipeProfiles.slice(0, 2).reverse();
+  toRender.forEach((p, i) => {
+    const isTop = i === toRender.length-1;
+    const card = buildSwipeCard(p, isTop);
+    stack.appendChild(card);
+    if (isTop) attachSwipeEvents(card, p);
+  });
+}
+
+function buildSwipeCard(p, isTop) {
+  const card = document.createElement('div');
+  card.className = 'swipe-card ' + (isTop ? 'top' : 'behind');
+  card.dataset.id = p.id;
+
+  const photoContent = p.photo
+    ? `<img src="${p.photo}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`
+    : `<span style="font-size:8rem">${p.emoji||'😊'}</span>`;
+
+  card.innerHTML = `
+    <div class="swipe-photo">${photoContent}</div>
+    <div class="swipe-gradient"></div>
+    <div class="swipe-info">
+      <div class="swipe-name">${p.name}</div>
+      <div class="swipe-meta">${p.dept||''} • ${p.uni||''}</div>
+      <div class="swipe-tags">
+        ${(p.interests||[]).slice(0,3).map(t=>`<span class="swipe-tag">${t}</span>`).join('')}
+      </div>
+    </div>
+    <div class="swipe-label like">LIKE</div>
+    <div class="swipe-label nope">NOPE</div>
+  `;
+  return card;
+}
+
+function attachSwipeEvents(card, profile) {
+  let startX=0, startY=0, isDragging=false;
+
+  function onStart(e) {
+    isDragging=true;
+    const pt = e.touches ? e.touches[0] : e;
+    startX = pt.clientX; startY = pt.clientY;
+    card.style.transition = 'none';
+  }
+  function onMove(e) {
+    if (!isDragging) return;
+    e.preventDefault();
+    const pt = e.touches ? e.touches[0] : e;
+    const dx = pt.clientX - startX;
+    const dy = pt.clientY - startY;
+    const rot = dx * 0.08;
+    card.style.transform = `translate(${dx}px,${dy}px) rotate(${rot}deg)`;
+    const pct = Math.abs(dx) / 120;
+    const likeLabel = card.querySelector('.swipe-label.like');
+    const nopeLabel = card.querySelector('.swipe-label.nope');
+    likeLabel.style.opacity = dx > 0 ? Math.min(pct,1) : 0;
+    nopeLabel.style.opacity = dx < 0 ? Math.min(pct,1) : 0;
+  }
+  function onEnd(e) {
+    if (!isDragging) return;
+    isDragging = false;
+    card.style.transition = '';
+    const pt = e.changedTouches ? e.changedTouches[0] : e;
+    const dx = pt.clientX - startX;
+    if (Math.abs(dx) > 100) {
+      swipeCard(card, profile, dx > 0 ? 'right' : 'left');
+    } else {
+      card.style.transform = '';
+      card.querySelectorAll('.swipe-label').forEach(l=>l.style.opacity=0);
+    }
+  }
+
+  card.addEventListener('mousedown', onStart);
+  card.addEventListener('mousemove', onMove);
+  card.addEventListener('mouseup', onEnd);
+  card.addEventListener('touchstart', onStart, {passive:false});
+  card.addEventListener('touchmove', onMove, {passive:false});
+  card.addEventListener('touchend', onEnd);
+}
+
+function swipeCard(card, profile, dir) {
+  card.classList.add(dir==='right' ? 'animating-right' : 'animating-left');
+  swipedIds.push(profile.id);
+  DB.set('um_swiped_'+currentUser.id, swipedIds);
+
+  if (dir === 'right' || dir === 'super') {
+    likes.push(profile.id);
+    DB.set('um_likes_'+currentUser.id, likes);
+    if (Math.random() < 0.45 && !matches.includes(profile.id)) {
+      matches.push(profile.id);
+      DB.set('um_matches_'+currentUser.id, matches);
+      setTimeout(() => showMatchPopup(profile), 450);
+    }
+  }
+
+  setTimeout(() => {
+    swipeProfiles.shift();
+    renderSwipeStack();
+    updateStats();
+  }, 380);
+}
+
+function doSwipe(dir) {
+  const card = document.querySelector('.swipe-card.top');
+  const profile = swipeProfiles[0];
+  if (!card||!profile) return;
+  swipeCard(card, profile, dir);
+}
+
+function showMatchPopup(profile) {
+  document.getElementById('match-popup-name').textContent = profile.name;
+  const youEl = document.getElementById('mp-you');
+  const themEl = document.getElementById('mp-them');
+  if (currentUser.photo) youEl.innerHTML = `<img src="${currentUser.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+  else youEl.textContent = currentUser.emoji||'😊';
+  if (profile.photo) themEl.innerHTML = `<img src="${profile.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+  else themEl.textContent = profile.emoji||'😊';
+  document.getElementById('match-popup').classList.add('show');
+  setTimeout(()=>{ activeChat=profile.id; renderChatHeader(profile); }, 100);
+}
+function closeMatch() { document.getElementById('match-popup').classList.remove('show'); }
+
+// ══════ DISCOVER ══════
+let dfSearch='', dfGender='';
+function filterProfiles(v){dfSearch=v.toLowerCase();renderDiscover();}
+function filterGender(v){dfGender=v;renderDiscover();}
+
+function renderDiscover() {
+  const grid = document.getElementById('profiles-grid');
+  let profiles = getUsers().filter(u=>u.id!==currentUser.id&&u.status==='active'&&!u.isAdmin);
+  if (dfSearch) profiles=profiles.filter(p=>p.name.toLowerCase().includes(dfSearch)||(p.interests||[]).some(i=>i.toLowerCase().includes(dfSearch)));
+  if (dfGender) profiles=profiles.filter(p=>p.gender===dfGender);
+  if (!profiles.length) { grid.innerHTML=`<div class="empty-state" style="grid-column:1/-1"><div class="empty-icon">😔</div><h3>No profiles found</h3><p>Try adjusting your filters</p></div>`; return; }
+  const colors=['#ffe8ec','#fff3e0','#e8f5e9','#e3f2fd','#f3e5f5'];
+  grid.innerHTML=profiles.map((p,i)=>{
+    const liked=likes.includes(p.id), matched=matches.includes(p.id);
+    const photoEl = p.photo ? `<img src="${p.photo}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">` : `<span class="card-image-emoji">${p.emoji||'😊'}</span>`;
+    return `<div class="profile-card">
+      <div class="card-image" style="background:${colors[i%colors.length]}">${photoEl}${matched?'<span class="card-badge">💞 Match!</span>':''}</div>
+      <div class="card-body">
+        <div class="card-name">${p.name}</div>
+        <div class="card-info">${p.dept||''} • ${p.uni||''}</div>
+        <div class="card-tags">${(p.interests||[]).slice(0,3).map(t=>`<span class="card-tag">${t}</span>`).join('')}</div>
+        <p style="font-size:0.82rem;color:var(--mid);margin-bottom:0.8rem;line-height:1.5;">${(p.bio||'').substring(0,80)}${(p.bio||'').length>80?'...':''}</p>
+        <div class="card-actions">
+          <button class="card-btn card-btn-like" onclick="quickLike('${p.id}',this)">${liked?'❤️ Liked':'💗 Like'}</button>
+          <button class="card-btn card-btn-skip" onclick="this.closest('.profile-card').remove()">Pass</button>
+        </div>
+      </div></div>`;
+  }).join('');
+}
+
+function quickLike(id,btn) {
+  if (likes.includes(id)) { likes=likes.filter(l=>l!==id); btn.textContent='💗 Like'; return; }
+  likes.push(id);
+  DB.set('um_likes_'+currentUser.id, likes);
+  btn.textContent='❤️ Liked';
+  if (Math.random()<0.4&&!matches.includes(id)) {
+    matches.push(id); DB.set('um_matches_'+currentUser.id,matches);
+    const u=getUsers().find(x=>x.id===id);
+    toast(`💞 Match with ${u?u.name:'someone'}!`,'success');
+  } else toast('💗 Liked!','info');
+  updateStats();
+}
+
+// ══════ MATCHES ══════
+function renderMatches() {
+  const list=document.getElementById('matches-list');
+  const users=getUsers();
+  const matched=users.filter(u=>matches.includes(u.id));
+  if(!matched.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">💞</div><h3>No matches yet</h3><p>Start swiping or liking profiles!</p></div>`;return;}
+  list.innerHTML=matched.map(u=>{
+    const conv=msgs[u.id]||[], last=conv[conv.length-1];
+    const avatarEl=u.photo?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:(u.emoji||'😊');
+    return `<div class="match-item" onclick="openChat('${u.id}')">
+      <div class="match-item-avatar">${avatarEl}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="match-name">${u.name}</div>
+        <div class="match-preview">${last?last.text.substring(0,40):'Say hello!'}</div>
+      </div>
+      <div style="text-align:right;">
+        <div class="match-time">${last?'Today':'New'}</div>
+        ${!last?'<div class="match-unread">!</div>':''}
+      </div></div>`;
+  }).join('');
+}
+
+// ══════ CHAT ══════
+function renderChatList() {
+  const container=document.getElementById('chat-list-items');
+  const users=getUsers();
+  const matched=users.filter(u=>matches.includes(u.id));
+  if(!matched.length){container.innerHTML='<div style="padding:1rem;color:var(--mid);font-size:0.85rem;">No matches yet</div>';return;}
+  container.innerHTML=matched.map(u=>{
+    const conv=msgs[u.id]||[], last=conv[conv.length-1];
+    const avatarEl=u.photo?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;">`:(u.emoji||'😊');
+    const isActive=activeChat===u.id;
+    return `<div class="chat-list-item${isActive?' active':''}" onclick="openChat('${u.id}')">
+      <div class="cli-avatar">${avatarEl}</div>
+      <div style="flex:1;min-width:0;">
+        <div class="cli-name">${u.name}</div>
+        <div class="cli-preview">${last?last.text:'Start chatting!'}</div>
+      </div></div>`;
+  }).join('');
+}
+
+function openChat(uid) {
+  const users=getUsers(), user=users.find(u=>u.id===uid);
+  if(!user)return;
+  activeChat=uid;
+  renderChatHeader(user);
+  renderChatMessages();
+  renderChatList();
+}
+
+function renderChatHeader(user) {
+  const av=document.getElementById('ch-avatar'), nm=document.getElementById('ch-name');
+  if(user.photo) av.innerHTML=`<img src="${user.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  else av.textContent=user.emoji||'😊';
+  nm.textContent=user.name;
+}
+
+function renderChatMessages() {
+  if(!activeChat)return;
+  const conv=msgs[activeChat]||[];
+  const container=document.getElementById('chat-messages');
+  if(!conv.length){
+    const u=getUsers().find(x=>x.id===activeChat);
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">👋</div><h3>Say hi to ${u?u.name:'them'}!</h3></div>`;
+    return;
+  }
+  container.innerHTML=conv.map(m=>`<div class="msg ${m.sent?'sent':'recv'}"><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.time}</div></div>`).join('');
+  container.scrollTop=container.scrollHeight;
+}
+
+const REPLIES=['That sounds amazing! 😊','Haha, I love that!','We should hang out on campus!','What are you studying again?','You seem really cool 🙂','Tell me more! 👀','I totally agree with that 😄','Omg same!! 😂'];
+
+function sendMsg() {
+  if(!activeChat)return toast('Select a conversation first','error');
+  const input=document.getElementById('chat-input');
+  const text=input.value.trim();
+  if(!text)return;
+  if(!msgs[activeChat])msgs[activeChat]=[];
+  const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+  msgs[activeChat].push({text,sent:true,time});
+  msgCount++;
+  input.value='';
+  DB.set('um_msgs_'+currentUser.id,msgs);
+  renderChatMessages();
+  updateStats();
+  setTimeout(()=>{
+    const reply=REPLIES[Math.floor(Math.random()*REPLIES.length)];
+    const rt=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
+    msgs[activeChat].push({text:reply,sent:false,time:rt});
+    DB.set('um_msgs_'+currentUser.id,msgs);
+    renderChatMessages();
+  },1200+Math.random()*800);
+}
+
+// ══════ PROFILE ══════
+function renderProfile() {
+  const pd=document.getElementById('profile-photo-display');
+  const pe=document.getElementById('profile-emoji-display');
+  if(currentUser.photo){pd.src=currentUser.photo;pd.style.display='block';pe.style.display='none';}
+  else{pd.style.display='none';pe.style.display='inline';pe.textContent=currentUser.emoji||'😊';}
+  document.getElementById('pf-name').textContent=currentUser.name;
+  document.getElementById('pf-meta').textContent=`${currentUser.dept||''} • ${currentUser.uni||''}`;
+  document.getElementById('pf-bio').textContent=currentUser.bio||'No bio yet. Edit your profile to add one!';
+  document.getElementById('pf-interests').innerHTML=(currentUser.interests||[]).map(i=>`<span class="card-tag">${i}</span>`).join('')||'<span style="color:var(--mid)">None yet</span>';
+  updateStats();
+}
+
+function updateStats() {
+  document.getElementById('s-likes').textContent=likes.length;
+  document.getElementById('s-matches').textContent=matches.length;
+  document.getElementById('s-msgs').textContent=msgCount;
+}
+
+function openEditModal() {
+  document.getElementById('edit-bio').value=currentUser.bio||'';
+  document.getElementById('edit-dept').value=currentUser.dept||'';
+  selectedInterests=[...(currentUser.interests||[])];
+  renderInterestGrid('edit-interests-grid');
+  document.getElementById('edit-modal').classList.add('open');
+}
+
+function saveProfile() {
+  currentUser.bio=document.getElementById('edit-bio').value.trim();
+  currentUser.dept=document.getElementById('edit-dept').value.trim();
+  currentUser.interests=selectedInterests;
+  updateUserInDB(currentUser);
+  closeModal('edit-modal');
+  renderProfile();
+  toast('Profile updated! ✅','success');
+}
+
+// ══════ INTERESTS ══════
+function renderInterestGrid(containerId) {
+  document.getElementById(containerId).innerHTML=INTERESTS.map(i=>`<span class="interest-tag${selectedInterests.includes(i)?' selected':''}" onclick="toggleInterest('${i}',this)">${i}</span>`).join('');
+}
+function toggleInterest(i,el) {
+  if(selectedInterests.includes(i)){selectedInterests=selectedInterests.filter(x=>x!==i);el.classList.remove('selected');}
+  else{selectedInterests.push(i);el.classList.add('selected');}
+}
+function selectGender(btn,g){document.querySelectorAll('#reg-s3 .gender-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedGender=g;}
+function selectPref(btn,p){document.querySelectorAll('#reg-s3 .gender-btn').forEach(b=>b.classList.remove('selected'));btn.classList.add('selected');selectedPref=p;}
+
+// ══════ ADMIN ══════
+let aSearch='',aStatus='';
+function adminSearch(v){aSearch=v.toLowerCase();renderAdmin();}
+function adminStatusFilter(v){aStatus=v;renderAdmin();}
+
+function renderAdmin() {
+  let users=getUsers();
+  document.getElementById('a-users').textContent=users.length;
+  document.getElementById('a-active').textContent=users.filter(u=>u.status==='active').length;
+  document.getElementById('a-verified').textContent=users.filter(u=>u.verified).length;
+  document.getElementById('a-matches').textContent=matches.length+24;
+  document.getElementById('a-msgs').textContent=msgCount+87;
+  if(aSearch)users=users.filter(u=>u.name.toLowerCase().includes(aSearch)||u.email.toLowerCase().includes(aSearch));
+  if(aStatus)users=users.filter(u=>u.status===aStatus);
+  document.getElementById('admin-tbody').innerHTML=users.map(u=>`<tr>
+    <td><strong>${u.photo?`<img src="${u.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">`:u.emoji||'😊'} ${u.name}</strong></td>
+    <td style="font-size:0.82rem">${u.email}</td>
+    <td>${u.uni||'-'}</td>
+    <td>${u.verified?'✅ Yes':'❌ No'}</td>
+    <td><span class="status-badge status-${u.status||'active'}">${u.status||'active'}</span></td>
+    <td>
+      ${u.status!=='active'?`<button class="action-btn action-approve" onclick="adminAction('${u.id}','approve')">Approve</button>`:''}
+      ${u.status!=='banned'?`<button class="action-btn action-ban" onclick="adminAction('${u.id}','ban')">Ban</button>`:`<button class="action-btn action-approve" onclick="adminAction('${u.id}','unban')">Unban</button>`}
+      <button class="action-btn action-delete" onclick="adminAction('${u.id}','delete')">Delete</button>
+    </td></tr>`).join('');
+}
+
+function adminAction(id,action) {
+  if(action==='delete'&&!confirm('Permanently delete this user?'))return;
+  let users=getUsers();
+  if(action==='delete'){users=users.filter(u=>u.id!==id);}
+  else{const u=users.find(u=>u.id===id);if(u)u.status=action==='approve'||action==='unban'?'active':'banned';}
+  saveUsers(users);
+  renderAdmin();
+  toast(action==='delete'?'User deleted':'User '+action+'d','success');
+}
+
+// ══════ AUTO LOGIN ══════
+window.onload=()=>{
+  const saved=DB.get('um_me');
+  if(saved){currentUser=saved;initApp();}
+  else showPage('landing');
+  renderInterestGrid('reg-interests-grid');
+};
+</script>
+</body>
+</html>
