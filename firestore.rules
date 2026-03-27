@@ -1,0 +1,150 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ── Helper functions ──────────────────────────────────────────────────────
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isSignedIn() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isSignedIn() &&
+        get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
+    }
+
+    function validUsername(name) {
+      return name.matches('^[a-zA-Z0-9_]{3,20}$');
+    }
+
+    function incomingData() {
+      return request.resource.data;
+    }
+
+    function existingData() {
+      return resource.data;
+    }
+
+    // ── /users/{userId} ───────────────────────────────────────────────────────
+    // Any authenticated user may read a profile.
+    // Only the owner can create/update their own document, subject to field
+    // validation. Admins cannot be self-promoted and banned users cannot
+    // reinstate themselves.
+
+    match /users/{userId} {
+      allow read: if isSignedIn();
+
+      allow create: if isOwner(userId)
+        // Prevent self-promotion to admin on creation
+        && incomingData().isAdmin == false
+        // Newly created users must have status 'active' or 'pending'
+        && incomingData().status in ['active', 'pending']
+        // Age gate
+        && incomingData().age is int && incomingData().age >= 18
+        // Bio length
+        && (!('bio' in incomingData()) || incomingData().bio.size() <= 500)
+        // Username format
+        && (!('username' in incomingData()) || validUsername(incomingData().username));
+
+      allow update: if isOwner(userId)
+        // Cannot change isAdmin flag
+        && incomingData().isAdmin == existingData().isAdmin
+        // Banned users cannot un-ban themselves
+        && !(existingData().status == 'banned' && incomingData().status == 'active')
+        // Age gate
+        && (!('age' in incomingData()) || (incomingData().age is int && incomingData().age >= 18))
+        // Bio length
+        && (!('bio' in incomingData()) || incomingData().bio.size() <= 500)
+        // Username format
+        && (!('username' in incomingData()) || validUsername(incomingData().username));
+
+      // Only admins (via Admin SDK) may delete user documents
+      allow delete: if false;
+    }
+
+    // ── /swipes/{swipeId} ─────────────────────────────────────────────────────
+    // Only the swiper can create a swipe document. Reads are limited to the
+    // swiper. No updates or deletes from clients.
+
+    match /swipes/{swipeId} {
+      allow read: if isSignedIn() && request.auth.uid == resource.data.swiperId;
+
+      allow create: if isSignedIn()
+        && incomingData().swiperId == request.auth.uid
+        && incomingData().swipedId is string
+        && incomingData().direction in ['left', 'right', 'super']
+        && incomingData().createdAt == request.time;
+
+      allow update, delete: if false;
+    }
+
+    // ── /matches/{matchId} ───────────────────────────────────────────────────
+    // Match documents are created exclusively by Cloud Functions (Admin SDK).
+    // Both matched users may read their match; no client writes are allowed.
+
+    match /matches/{matchId} {
+      allow read: if isSignedIn() && request.auth.uid in resource.data.users;
+      allow write: if false;
+    }
+
+    // ── /chats/{chatId}/messages/{msgId} ─────────────────────────────────────
+    // Only participants in the chat (identified by chatId convention
+    // "uid1_uid2" sorted lexicographically) may read or create messages.
+    // Message text is capped at 1 000 characters.
+
+    match /chats/{chatId}/messages/{msgId} {
+      function participants() {
+        return chatId.split('_');
+      }
+
+      allow read: if isSignedIn() && request.auth.uid in participants();
+
+      allow create: if isSignedIn()
+        && request.auth.uid in participants()
+        && incomingData().senderId == request.auth.uid
+        && incomingData().text is string
+        && incomingData().text.size() <= 1000
+        && incomingData().createdAt == request.time;
+
+      allow update, delete: if false;
+    }
+
+    // ── /reports/{reportId} ──────────────────────────────────────────────────
+    // Any authenticated user can file a report. Only admins can read reports.
+
+    match /reports/{reportId} {
+      allow create: if isSignedIn()
+        && incomingData().reporterId == request.auth.uid
+        && incomingData().reportedId is string
+        && incomingData().reason is string
+        && incomingData().reason.size() <= 1000;
+
+      allow read: if isAdmin();
+      allow update, delete: if false;
+    }
+
+    // ── /blocks/{blockId} ────────────────────────────────────────────────────
+    // Only the blocker can create a block. Both parties may read it.
+
+    match /blocks/{blockId} {
+      allow create: if isSignedIn()
+        && incomingData().blockerId == request.auth.uid
+        && incomingData().blockedId is string;
+
+      allow read: if isSignedIn()
+        && (request.auth.uid == resource.data.blockerId
+            || request.auth.uid == resource.data.blockedId);
+
+      allow update, delete: if false;
+    }
+
+    // ── Deny everything else ─────────────────────────────────────────────────
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

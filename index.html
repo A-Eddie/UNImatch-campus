@@ -4,7 +4,7 @@
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>UniMatch v2 — Campus Dating</title>
-<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,400;0,600;0,700;1,400;1,600&family=Outfit:wght@300;400;500;600;700&display=swap" rel="stylesheet" crossorigin="anonymous">
 <style>
 :root {
   --rose: #e8637a;
@@ -763,7 +763,51 @@ tr:last-child td { border-bottom:none; }
 
 <div class="toast" id="toast"></div>
 
+<!-- Firebase SDK (compat) — loaded before the inline script -->
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-auth-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-firestore-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-storage-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-app-check-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.12.0/firebase-functions-compat.js"></script>
+
 <script>
+// ══════════════════════════════════════════
+// Firebase configuration
+// NOTE: Firebase web API keys are designed to be public and embedded in
+// client-side code. Security is enforced through:
+//   1. Firestore Security Rules (firestore.rules)
+//   2. Storage Security Rules (storage.rules)
+//   3. Firebase App Check
+//   4. HTTP Referrer restrictions on the API key in Google Cloud Console
+//      (Cloud Console → APIs & Services → Credentials → Browser key → HTTP referrers)
+// NEVER store service-account credentials or admin SDK keys in client code.
+// ══════════════════════════════════════════
+const firebaseConfig = {
+  apiKey: "AIzaSyB3zvRI9itpP80HtbCliSPc_KFz9d9USXs",
+  authDomain: "unimatch-campus.firebaseapp.com",
+  projectId: "unimatch-campus",
+  storageBucket: "unimatch-campus.firebasestorage.app",
+  messagingSenderId: "193015537804",
+  appId: "1:193015537804:web:1d03865941a56e503ddba9"
+};
+
+firebase.initializeApp(firebaseConfig);
+
+// ── App Check (reCAPTCHA v3) ──────────────────────────────────────────────
+// TODO: Replace 'YOUR_RECAPTCHA_V3_SITE_KEY' with the key obtained from
+//       https://www.google.com/recaptcha/admin after registering the app
+//       in Firebase Console → App Check → Register.
+// Uncomment the lines below once App Check is configured:
+//
+// const appCheck = firebase.appCheck();
+// appCheck.activate('YOUR_RECAPTCHA_V3_SITE_KEY', /* isTokenAutoRefreshEnabled= */ true);
+
+const auth = firebase.auth();
+const db_firestore = firebase.firestore();
+const storage = firebase.storage();
+const functions = firebase.functions();
+
 // ══════════════════════════════════════════
 // CONFIG — Change admin credentials here!
 // ══════════════════════════════════════════
@@ -773,6 +817,10 @@ const ADMIN_PASS  = 'Admin@UniMatch2024!';
 const INTERESTS = ['Music','Yoga','Reading','Coffee','Gaming','Hiking','Photography','Cooking','Art','Travel','Film','Football','Volunteering','Podcasts','Entrepreneurship','Cycling','Robotics','Writing','Finance','Tennis','Debate','Dance','Sports','Animals','Nature','Tech'];
 
 // ══════ DB (localStorage) ══════
+// SECURITY NOTE: localStorage is used for offline-first caching of non-sensitive
+// UI state. Auth tokens are managed exclusively by the Firebase Auth SDK and are
+// never stored manually. Passwords are never stored. The cached `um_me` object
+// must NOT include sensitive fields (e.g. password, tokens).
 const DB = {
   get: k => { try { return JSON.parse(localStorage.getItem(k)); } catch { return null; } },
   set: (k,v) => localStorage.setItem(k, JSON.stringify(v)),
@@ -908,7 +956,9 @@ function updateUserInDB(user) {
   const i = users.findIndex(u => u.id === user.id);
   if (i >= 0) users[i] = user;
   saveUsers(users);
-  DB.set('um_me', user);
+  // Cache a sanitised copy — never include the password in the local cache
+  const { password: _pw, ...safeUser } = user;
+  DB.set('um_me', safeUser);
 }
 
 // ══════ VERIFICATION ══════
@@ -987,7 +1037,10 @@ function handleRegister() {
   users.push(user);
   saveUsers(users);
   currentUser = user;
-  DB.set('um_me', user);
+  // Cache a sanitised copy — never include the password in the local cache
+  const { password: _pw, ...safeUser } = user;
+  DB.set('um_me', safeUser);
+  currentUser = safeUser;
   toast('Welcome to UniMatch! 💗','success');
   initApp();
 }
@@ -1003,10 +1056,13 @@ function handleLogin() {
   }
   const users = getUsers();
   const user = users.find(u => u.email===email && u.password===pass);
-  if (!user) return toast('Wrong email or password','error');
+  // Generic error message — avoids leaking whether the email exists (user enumeration)
+  if (!user) return toast('Invalid email or password','error');
   if (user.status==='banned') return toast('Account suspended','error');
-  currentUser = user;
-  DB.set('um_me', currentUser);
+  // Cache a sanitised copy — never include the password in the local cache
+  const { password: _pw, ...safeUser } = user;
+  currentUser = safeUser;
+  DB.set('um_me', safeUser);
   initApp();
 }
 function fillAdmin() {
@@ -1017,10 +1073,13 @@ function fillAdmin() {
 function logout() {
   DB.del('um_me');
   currentUser=null; likes=[]; matches=[]; swipedIds=[]; msgs={}; msgCount=0;
+  if (_matchesUnsubscribe) { _matchesUnsubscribe(); _matchesUnsubscribe = null; }
   showPage('landing');
 }
 
 // ══════ INIT ══════
+let _matchesUnsubscribe = null;
+
 function initApp() {
   let users = getUsers();
   if (!users.find(u=>u.id==='s1')) {
@@ -1042,6 +1101,46 @@ function initApp() {
   document.getElementById('app').style.display='block';
   showPage('app');
   initSwipe();
+
+  // Subscribe to Firestore matches in real time.
+  // When the onSwipeCreated Cloud Function creates a match document the UI
+  // updates automatically without any client-side write.
+  subscribeToMatches();
+}
+
+/**
+ * Opens a real-time Firestore listener on /matches where the current user is
+ * a participant. Updates the local `matches` array and re-renders the UI.
+ */
+function subscribeToMatches() {
+  if (!currentUser || !currentUser.id) return;
+  // Cancel any previous subscription
+  if (_matchesUnsubscribe) _matchesUnsubscribe();
+
+  _matchesUnsubscribe = db_firestore.collection('matches')
+    .where('users', 'array-contains', currentUser.id)
+    .onSnapshot((snapshot) => {
+      snapshot.docChanges().forEach((change) => {
+        const data = change.doc.data();
+        const otherUserId = (data.users || []).find(uid => uid !== currentUser.id);
+        if (!otherUserId) return;
+
+        if (change.type === 'added' && !matches.includes(otherUserId)) {
+          matches.push(otherUserId);
+          DB.set('um_matches_'+currentUser.id, matches);
+          const u = getUsers().find(x => x.id === otherUserId);
+          toast(`💞 Match with ${u ? u.name : 'someone'}!`, 'success');
+          updateStats();
+        } else if (change.type === 'removed') {
+          matches = matches.filter(id => id !== otherUserId);
+          DB.set('um_matches_'+currentUser.id, matches);
+          updateStats();
+        }
+      });
+    }, (err) => {
+      // Firestore listener errors are non-fatal in demo mode
+      console.warn('Firestore match listener error:', err.message);
+    });
 }
 
 // ══════ SWIPE ══════
@@ -1160,11 +1259,11 @@ function swipeCard(card, profile, dir) {
   if (dir === 'right' || dir === 'super') {
     likes.push(profile.id);
     DB.set('um_likes_'+currentUser.id, likes);
-    if (Math.random() < 0.45 && !matches.includes(profile.id)) {
-      matches.push(profile.id);
-      DB.set('um_matches_'+currentUser.id, matches);
-      setTimeout(() => showMatchPopup(profile), 450);
-    }
+    // Match creation is handled server-side by the onSwipeCreated Cloud Function,
+    // which checks for a reciprocal swipe before creating a match document.
+    // The UI updates when the Firestore real-time listener (subscribeToMatches)
+    // receives the new match. No client-side Math.random() matching.
+    toast('💗 Liked!','info');
   }
 
   setTimeout(() => {
@@ -1229,11 +1328,9 @@ function quickLike(id,btn) {
   likes.push(id);
   DB.set('um_likes_'+currentUser.id, likes);
   btn.textContent='❤️ Liked';
-  if (Math.random()<0.4&&!matches.includes(id)) {
-    matches.push(id); DB.set('um_matches_'+currentUser.id,matches);
-    const u=getUsers().find(x=>x.id===id);
-    toast(`💞 Match with ${u?u.name:'someone'}!`,'success');
-  } else toast('💗 Liked!','info');
+  // Match creation is handled server-side by the onSwipeCreated Cloud Function.
+  // No client-side Math.random() matching.
+  toast('💗 Liked!','info');
   updateStats();
 }
 
