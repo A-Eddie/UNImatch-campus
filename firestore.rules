@@ -17,6 +17,8 @@ service cloud.firestore {
     }
 
     function isAdmin() {
+      // NOTE: This performs a Firestore document read per call.
+      // Use sparingly and only in paths that require admin access.
       return isSignedIn() &&
         get(/databases/$(database)/documents/users/$(request.auth.uid)).data.isAdmin == true;
     }

@@ -2,7 +2,7 @@
 
 ## Reporting a Vulnerability
 
-If you discover a security vulnerability in UniMatch Campus, please **do not** open a public GitHub issue. Instead, email the maintainer directly at `security@unimatch.app` (replace with the real contact address) with:
+If you discover a security vulnerability in UniMatch Campus, please **do not** open a public GitHub issue. Instead, contact the maintainer via the email listed on the [GitHub repository](https://github.com/A-Eddie/UNImatch-campus) profile with:
 
 - A description of the vulnerability
 - Steps to reproduce

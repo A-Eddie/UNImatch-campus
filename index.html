@@ -766,8 +766,12 @@ tr:last-child td { border-bottom:none; }
 // CONFIG — Set admin credentials via environment / Firebase Auth in production.
 // Do NOT hard-code real credentials in client-side code.
 // ══════════════════════════════════════════
+// IMPORTANT: These credentials are for the local demo/prototype only.
+// In production, replace with Firebase Authentication + Custom Claims.
+// See SECURITY.md § "Replace Demo Admin Account" for instructions.
+// ══════════════════════════════════════════
 const ADMIN_EMAIL = 'admin@unimatch.app';
-const ADMIN_PASS  = 'Admin@UniMatch2024!'; // Demo only — replace with server-side auth
+const ADMIN_PASS  = 'Admin@UniMatch2024!'; // TODO: Remove before production deployment
 
 const INTERESTS = ['Music','Yoga','Reading','Coffee','Gaming','Hiking','Photography','Cooking','Art','Travel','Film','Football','Volunteering','Podcasts','Entrepreneurship','Cycling','Robotics','Writing','Finance','Tennis','Debate','Dance','Sports','Animals','Nature','Tech'];
 
@@ -1034,8 +1038,8 @@ function handleLogin() {
   if (!user) {
     loginAttempts++;
     if (loginAttempts >= 5) {
-      // Exponential backoff: 30s, 60s, 120s … capped at 5 min
-      const delay = Math.min(30000 * Math.pow(2, loginAttempts - 5), 300000);
+      // Exponential backoff starting at 60s: 60s, 120s, 240s … capped at 5 min
+      const delay = Math.min(30000 * Math.pow(2, loginAttempts - 4), 300000);
       loginLockoutUntil = Date.now() + delay;
       return toast('Too many failed attempts. Please wait before trying again.', 'error');
     }
@@ -1275,7 +1279,8 @@ function renderDiscover() {
   grid.innerHTML=profiles.map((p,i)=>{
     const liked=likes.includes(p.id), matched=matches.includes(p.id);
     const photoEl = p.photo ? `<img src="${escapeHTML(p.photo)}" alt="${escapeHTML(p.name)}" style="width:100%;height:100%;object-fit:cover;">` : `<span class="card-image-emoji">${escapeHTML(p.emoji||'😊')}</span>`;
-    const bioSnippet = escapeHTML((p.bio||'').substring(0,80)) + ((p.bio||'').length>80?'…':'');
+    const bio = p.bio||'';
+    const bioSnippet = escapeHTML(bio.substring(0,80)) + (bio.length>80?'…':'');
     return `<div class="profile-card">
       <div class="card-image" style="background:${colors[i%colors.length]}">${photoEl}${matched?'<span class="card-badge">💞 Match!</span>':''}</div>
       <div class="card-body">
