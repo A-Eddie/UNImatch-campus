@@ -1,0 +1,59 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ══════════════════════════════════════
+    // HELPER FUNCTIONS
+    // ══════════════════════════════════════
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    function isNotBanned() {
+      return isAuth() && (request.auth.token.banned == null || request.auth.token.banned == false);
+    }
+
+    function isValidImage() {
+      return request.resource.contentType.matches('image/.*')
+             && request.resource.size < 5 * 1024 * 1024; // 5MB max
+    }
+
+    function isAllowedImageType() {
+      return request.resource.contentType in [
+        'image/jpeg',
+        'image/png',
+        'image/webp',
+        'image/gif'
+      ];
+    }
+
+    // ══════════════════════════════════════
+    // PROFILE PHOTOS
+    // ══════════════════════════════════════
+    match /profiles/{userId}/{allPaths=**} {
+      // Anyone authenticated can read profile photos
+      allow read: if isAuth();
+
+      // Users can only write to their own profile folder
+      // Enforce file type and size server-side
+      allow write: if isOwner(userId)
+                   && isNotBanned()
+                   && isValidImage()
+                   && isAllowedImageType();
+
+      // Users can delete their own photos
+      allow delete: if isOwner(userId) || request.auth.token.admin == true;
+    }
+
+    // ══════════════════════════════════════
+    // CATCH-ALL — Deny everything else
+    // ══════════════════════════════════════
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+  }
+}

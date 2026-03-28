@@ -1,0 +1,211 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ══════════════════════════════════════
+    // HELPER FUNCTIONS
+    // ══════════════════════════════════════
+    function isAuth() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuth() && request.auth.uid == userId;
+    }
+
+    function isAdmin() {
+      return isAuth() && request.auth.token.admin == true;
+    }
+
+    function isBanned() {
+      return isAuth() && request.auth.token.banned == true;
+    }
+
+    function isNotBanned() {
+      return isAuth() && (request.auth.token.banned == null || request.auth.token.banned == false);
+    }
+
+    function isValidString(field, minLen, maxLen) {
+      return field is string && field.size() >= minLen && field.size() <= maxLen;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches('.*@.*\\..*');
+    }
+
+    // Prevent modification of protected fields by non-admins
+    function protectedFieldsUnchanged() {
+      return (!request.resource.data.diff(resource.data).affectedKeys().hasAny(['isAdmin', 'status', 'verified']))
+             || isAdmin();
+    }
+
+    // ══════════════════════════════════════
+    // USERS COLLECTION
+    // ══════════════════════════════════════
+    match /users/{userId} {
+      // Anyone authenticated can read active user profiles (for discovery/matching)
+      allow read: if isAuth() && isNotBanned();
+
+      // Users can only create their own profile
+      allow create: if isOwner(userId)
+                    && isNotBanned()
+                    && request.resource.data.id == userId
+                    && request.resource.data.isAdmin == false
+                    && request.resource.data.status == 'active'
+                    && isValidString(request.resource.data.name, 1, 100)
+                    && isValidString(request.resource.data.email, 5, 254)
+                    && request.resource.data.keys().hasAll(['id', 'name', 'email', 'status', 'isAdmin', 'createdAt'])
+                    && request.resource.data.keys().hasOnly(['id', 'name', 'username', 'email', 'status', 'isAdmin', 'createdAt', 'uni', 'dept', 'gender', 'pref', 'yearOfStudy', 'age', 'interests', 'bio', 'photo', 'photos', 'emoji', 'verified', 'joined', 'location']);
+
+      // Users can update their own profile, but NOT isAdmin, status, or verified
+      allow update: if (isOwner(userId) && protectedFieldsUnchanged() && isNotBanned())
+                    || isAdmin();
+
+      // Only admins can delete user documents (cleanup via Cloud Function)
+      allow delete: if isAdmin();
+    }
+
+    // ══════════════════════════════════════
+    // SETTINGS COLLECTION
+    // ══════════════════════════════════════
+    match /settings/{userId} {
+      allow read: if isOwner(userId) && isNotBanned();
+      allow create: if isOwner(userId) && isNotBanned()
+                    && request.resource.data.keys().hasOnly(['notifications', 'privacy', 'theme', 'language', 'discovery'])
+                    && request.resource.size() < 10240;
+      allow update: if isOwner(userId) && isNotBanned()
+                    && request.resource.data.keys().hasOnly(['notifications', 'privacy', 'theme', 'language', 'discovery'])
+                    && request.resource.size() < 10240;
+      allow delete: if isOwner(userId) || isAdmin();
+    }
+
+    // ══════════════════════════════════════
+    // SWIPES COLLECTION
+    // ══════════════════════════════════════
+    match /swipes/{swipeId} {
+      // Users can read swipes they are involved in
+      allow read: if isAuth() && isNotBanned()
+                  && (resource.data.swiperId == request.auth.uid
+                      || resource.data.swipedId == request.auth.uid);
+
+      // Users can only create swipes as themselves (write-once)
+      allow create: if isAuth() && isNotBanned()
+                    && request.resource.data.swiperId == request.auth.uid
+                    && request.resource.data.swiperId != request.resource.data.swipedId
+                    && request.resource.data.direction in ['left', 'right', 'super']
+                    && swipeId == (request.auth.uid + '_' + request.resource.data.swipedId);
+
+      // Swipes cannot be updated or deleted by clients
+      allow update, delete: if false;
+    }
+
+    // ══════════════════════════════════════
+    // MATCHES COLLECTION — Server-write only
+    // ══════════════════════════════════════
+    match /matches/{matchId} {
+      // Users can only read matches they are part of
+      allow read: if isAuth() && isNotBanned()
+                  && request.auth.uid in resource.data.users;
+
+      // Matches can only be created/updated/deleted by Cloud Functions (admin SDK)
+      allow create, update, delete: if false;
+    }
+
+    // ══════════════════════════════════════
+    // CHATS COLLECTION
+    // ══════════════════════════════════════
+    match /chats/{chatId} {
+      // Users in the chat can read
+      allow read: if isAuth() && isNotBanned()
+                  && request.auth.uid in chatId.split('_');
+
+      // Users can only create the chat doc (for typing indicators)
+      allow create: if isAuth() && isNotBanned()
+                    && request.auth.uid in chatId.split('_')
+                    && exists(/databases/$(database)/documents/matches/$(chatId));
+
+      // Users can only update their own typing field
+      allow update: if isAuth() && isNotBanned()
+                    && request.auth.uid in chatId.split('_')
+                    && request.resource.data.diff(resource.data).affectedKeys()
+                       .hasOnly(['typing_' + request.auth.uid]);
+
+      // Chat docs cannot be deleted by clients
+      allow delete: if false;
+
+      // Messages subcollection — server-write only via sendMessage callable
+      match /messages/{messageId} {
+        // Users can read messages in chats they belong to
+        allow read: if isAuth() && isNotBanned()
+                    && request.auth.uid in chatId.split('_');
+
+        // Messages can only be created by the server (sendMessage Cloud Function)
+        allow create: if false;
+
+        // Messages cannot be updated
+        allow update: if false;
+
+        // Sender can delete their own messages
+        allow delete: if isAuth() && resource.data.senderId == request.auth.uid;
+      }
+    }
+
+    // ══════════════════════════════════════
+    // NOTIFICATIONS — Server-write, user-read
+    // ══════════════════════════════════════
+    match /notifications/{notifId} {
+      allow read: if isAuth() && isNotBanned()
+                  && resource.data.userId == request.auth.uid;
+
+      // Users can only mark their own notifications as read
+      allow update: if isAuth() && isNotBanned()
+                    && resource.data.userId == request.auth.uid
+                    && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['read']);
+
+      // Only server can create notifications
+      allow create, delete: if false;
+    }
+
+    // ══════════════════════════════════════
+    // REPORTS — Write-only via Cloud Function
+    // ══════════════════════════════════════
+    match /reports/{reportId} {
+      // Only admins can read reports
+      allow read: if isAdmin();
+
+      // Clients cannot write directly — must use submitReport Cloud Function
+      allow create, update, delete: if false;
+    }
+
+    // ══════════════════════════════════════
+    // BLOCKS COLLECTION
+    // ══════════════════════════════════════
+    match /blocks/{blockId} {
+      allow read: if isAuth() && isNotBanned()
+                  && (resource.data.blocker == request.auth.uid
+                      || resource.data.blocked == request.auth.uid);
+
+      allow create: if isAuth() && isNotBanned()
+                    && request.resource.data.blocker == request.auth.uid
+                    && request.resource.data.blocker != request.resource.data.blocked;
+
+      allow delete: if isAuth() && resource.data.blocker == request.auth.uid;
+
+      allow update: if false;
+    }
+
+    // ══════════════════════════════════════
+    // RATE LIMITS — Server-only
+    // ══════════════════════════════════════
+    match /rateLimits/{docId} {
+      allow read, write: if false;
+    }
+
+    // ══════════════════════════════════════
+    // CATCH-ALL — Deny everything else
+    // ══════════════════════════════════════
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}
