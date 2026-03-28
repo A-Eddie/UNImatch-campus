@@ -5,6 +5,31 @@ admin.initializeApp();
 const db = admin.firestore();
 
 // ══════════════════════════════════════
+// PROCESS NEW USER ON SIGN-UP
+// ══════════════════════════════════════
+exports.processNewUser = functions.auth.user().onCreate(async (user) => {
+  const email = user.email;
+  const uid = user.uid;
+
+  // Server-side double check for safety
+  const isStudent = email && (email.endsWith(".ac.ke") || email.endsWith(".edu"));
+
+  if (!isStudent) {
+    // Delete the user immediately if they aren't a student
+    return admin.auth().deleteUser(uid);
+  }
+
+  // Create a student profile in Firestore
+  return db.collection("users").doc(uid).set({
+    email: email,
+    isVerified: false,
+    role: "student",
+    status: "active",
+    createdAt: admin.firestore.FieldValue.serverTimestamp(),
+  });
+});
+
+// ══════════════════════════════════════
 // INPUT SANITIZATION HELPER
 // ══════════════════════════════════════
 function sanitize(str, maxLen = 500) {

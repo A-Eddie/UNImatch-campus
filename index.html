@@ -3020,6 +3020,13 @@ const INTERESTS = ['Music','Yoga','Reading','Coffee','Gaming','Hiking','Photogra
 // ═══════════════════════════════════════
 // SECURE LOCAL STORAGE — Only store non-sensitive data
 // ═══════════════════════════════════════
+// Function to check if the email is a valid Kenyan University email
+function isValidStudentEmail(email) {
+  // Matches: something@students.uonbi.ac.ke OR something@strathmore.edu
+  const kenyanUniRegex = /^[a-zA-Z0-9._%+-]+@(?:students\.)?[a-zA-Z0-9.-]+\.(?:ac\.ke|edu)$/i;
+  return kenyanUniRegex.test(email);
+}
+
 const DB = {
   get: k => { try { return JSON.parse(sessionStorage.getItem(k)); } catch { return null; } },
   set: (k, v) => {
@@ -3555,7 +3562,7 @@ function regStep1() {
   if (!uname)                     return toast('Please choose a username','error');
   if (!isValidUsername(uname))    return toast('Username: 3-20 characters, letters, numbers & underscores only','error');
   if (!email.includes('@'))       return toast('Enter a valid email','error');
-  if (!isValidEmail(email))       return toast('Please use your university email (.ac.ke or .edu domain)','error');
+  if (!isValidStudentEmail(email)) return toast('Please use your official .ac.ke or .edu university email to join UniMatch.','error');
   if (pass.length < 8)            return toast('Password needs at least 8 characters','error');
   if (!isPasswordValid())          return toast('Password must have uppercase, lowercase, number, and special character','error');
 
@@ -3616,10 +3623,15 @@ function handleRegister() {
   const bio = (document.getElementById('reg-bio').value || '').trim();
   const btn = document.querySelector('#reg-s3 .btn-primary');
 
+  // Prevent double submit
+  if (handleRegister._submitting) return;
+  handleRegister._submitting = true;
+
   // Require Terms & Privacy Policy consent
   const tosCheckbox = document.getElementById('reg-tos-agree');
   if (!tosCheckbox || !tosCheckbox.checked) {
     toast('Please agree to the Terms of Service and Privacy Policy', 'error');
+    handleRegister._submitting = false;
     return;
   }
 
@@ -3628,11 +3640,19 @@ function handleRegister() {
   if (!pendingUserData) {
     toast('Session expired — please start registration again','error');
     if (btn) { btn.textContent = 'Create My Profile'; btn.disabled = false; }
+    handleRegister._submitting = false;
     return;
   }
 
   const email = pendingUserData.email;
   const pass  = pendingUserData.pass;
+
+  if (!isValidStudentEmail(email)) {
+    toast('Please use your official .ac.ke or .edu university email to join UniMatch.','error');
+    if (btn) { btn.textContent = 'Create My Profile'; btn.disabled = false; }
+    handleRegister._submitting = false;
+    return;
+  }
 
   auth.createUserWithEmailAndPassword(email, pass)
     .then(cred => {
@@ -3699,9 +3719,14 @@ function handleRegister() {
       }
       if (err.code === 'auth/invalid-email') msg = 'Please enter a valid email address.';
       if (err.code === 'auth/weak-password') msg = 'Password too weak (min 8 chars).';
+      if (!err.code) {
+        // Log unknown errors for debugging
+        console.error('Registration error:', err);
+      }
       toast(msg,'error');
       if (btn) { btn.textContent = 'Create My Profile'; btn.disabled = false; }
-    });
+    })
+    .finally(() => { handleRegister._submitting = false; });
 }
 
 // Check if user has verified their email
@@ -3789,11 +3814,11 @@ function handleGoogleLogin() {
       const googleEmail = (user.email || '').toLowerCase();
       const googleDomain = (googleEmail.split('@')[1] || '');
 
-      // Enforce university email domain for new Google sign-ups
+      // Enforce university email domain for new Google sign-ups (stricter)
       const existingSnap = await db.collection('users').doc(uid).get();
-      if (!existingSnap.exists && !isValidEmail(googleEmail)) {
+      if (!existingSnap.exists && !isValidStudentEmail(googleEmail)) {
         auth.signOut();
-        return toast('Please use your university Google account (.ac.ke or .edu)', 'error');
+        return toast('Please use your official .ac.ke or .edu university email to join UniMatch.', 'error');
       }
 
       // Check if profile already exists
