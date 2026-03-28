@@ -424,9 +424,6 @@ tr:last-child td { border-bottom:none; }
     </div>
     <button class="btn btn-primary btn-full" onclick="handleLogin()">Sign In Securely 🔒</button>
     <div class="auth-switch">Don't have an account? <a onclick="showPage('register')">Create one</a></div>
-    <div style="text-align:center;margin-top:1rem;font-size:0.85rem;color:var(--mid)">
-      Admin? <a onclick="fillAdmin()" style="color:var(--gold);cursor:pointer;font-weight:600;">Admin Login →</a>
-    </div>
   </div>
 </div>
 
@@ -673,6 +670,7 @@ tr:last-child td { border-bottom:none; }
           </div>
         </div>
         <button onclick="logout()" style="background:var(--light);border:none;border-radius:10px;padding:0.7rem 1.5rem;cursor:pointer;color:var(--mid);font-family:'Outfit',sans-serif;font-weight:600;">🚪 Sign Out</button>
+        <button onclick="deleteAccount()" style="background:#fff0f0;border:none;border-radius:10px;padding:0.7rem 1.5rem;cursor:pointer;color:#c94d63;font-family:'Outfit',sans-serif;font-weight:600;margin-top:0.7rem;">🗑️ Delete Account</button>
       </div>
 
       <!-- ADMIN -->
@@ -765,10 +763,11 @@ tr:last-child td { border-bottom:none; }
 
 <script>
 // ══════════════════════════════════════════
-// CONFIG — Change admin credentials here!
+// CONFIG — Set admin credentials via environment / Firebase Auth in production.
+// Do NOT hard-code real credentials in client-side code.
 // ══════════════════════════════════════════
 const ADMIN_EMAIL = 'admin@unimatch.app';
-const ADMIN_PASS  = 'Admin@UniMatch2024!';
+const ADMIN_PASS  = 'Admin@UniMatch2024!'; // Demo only — replace with server-side auth
 
 const INTERESTS = ['Music','Yoga','Reading','Coffee','Gaming','Hiking','Photography','Cooking','Art','Travel','Film','Football','Volunteering','Podcasts','Entrepreneurship','Cycling','Robotics','Writing','Finance','Tennis','Debate','Dance','Sports','Animals','Nature','Tech'];
 
@@ -792,17 +791,31 @@ let isDragging = false, startX = 0, startY = 0, currentX = 0;
 
 // ══════ SAMPLE DATA ══════
 const SAMPLES = [
-  {id:'s1',name:'Amara Johnson',emoji:'👩🏾',dept:'Psychology',uni:'State University',gender:'woman',interests:['Music','Yoga','Reading'],bio:"Psych student who loves understanding people. Let's grab coffee!",status:'active',joined:'2024-01-15',email:'amara@state.edu',verified:true,photo:''},
-  {id:'s2',name:'Leo Zhang',emoji:'👨🏻',dept:'Computer Science',uni:'Tech Institute',gender:'man',interests:['Gaming','Hiking','Photography'],bio:"CS student by day, amateur chef by night.",status:'active',joined:'2024-02-03',email:'leo@techins.edu',verified:true,photo:''},
-  {id:'s3',name:'Sofia Reyes',emoji:'👩🏽',dept:'Fine Arts',uni:'City College',gender:'woman',interests:['Art','Music','Travel'],bio:"Artist and filmmaker. Always seeking new adventures.",status:'active',joined:'2024-01-28',email:'sofia@citycollege.edu',verified:true,photo:''},
-  {id:'s4',name:'Marcus Williams',emoji:'👨🏿',dept:'Medicine',uni:'State University',gender:'man',interests:['Football','Volunteering','Reading'],bio:"Future doctor with a love for sports.",status:'active',joined:'2024-03-01',email:'marcus@state.edu',verified:true,photo:''},
-  {id:'s5',name:'Zara Ahmed',emoji:'👩🏽',dept:'Business',uni:'Commerce University',gender:'woman',interests:['Entrepreneurship','Yoga','Travel'],bio:"Aspiring entrepreneur. Let's build something great.",status:'active',joined:'2024-02-14',email:'zara@commerce.edu',verified:true,photo:''},
-  {id:'s6',name:'Tyler Kim',emoji:'🧑',dept:'Philosophy',uni:'Liberal Arts College',gender:'nonbinary',interests:['Reading','Film','Art'],bio:"Philosophy student who thinks too much.",status:'active',joined:'2024-01-20',email:'tyler@lac.edu',verified:true,photo:''},
-  {id:'s7',name:'Emma Costa',emoji:'👩🏼',dept:'Engineering',uni:'Tech Institute',gender:'woman',interests:['Robotics','Gaming','Music'],bio:"Engineer who breaks things to understand them.",status:'active',joined:'2024-03-10',email:'emma@techins.edu',verified:false,photo:''},
-  {id:'s8',name:'Jordan Parker',emoji:'👨🏼',dept:'Economics',uni:'Business Academy',gender:'man',interests:['Finance','Travel','Tennis'],bio:"Econ student who dreams of backpacking Asia.",status:'pending',joined:'2024-02-22',email:'jordan@bizac.edu',verified:false,photo:''},
+  {id:'s1',name:'Amara Johnson',emoji:'👩🏾',dept:'Psychology',uni:'State University',gender:'woman',interests:['Music','Yoga','Reading'],bio:"Psych student who loves understanding people. Let's grab coffee!",status:'active',joined:'2024-01-15',email:'amara@state.edu',verified:true,photo:'',isSample:true},
+  {id:'s2',name:'Leo Zhang',emoji:'👨🏻',dept:'Computer Science',uni:'Tech Institute',gender:'man',interests:['Gaming','Hiking','Photography'],bio:"CS student by day, amateur chef by night.",status:'active',joined:'2024-02-03',email:'leo@techins.edu',verified:true,photo:'',isSample:true},
+  {id:'s3',name:'Sofia Reyes',emoji:'👩🏽',dept:'Fine Arts',uni:'City College',gender:'woman',interests:['Art','Music','Travel'],bio:"Artist and filmmaker. Always seeking new adventures.",status:'active',joined:'2024-01-28',email:'sofia@citycollege.edu',verified:true,photo:'',isSample:true},
+  {id:'s4',name:'Marcus Williams',emoji:'👨🏿',dept:'Medicine',uni:'State University',gender:'man',interests:['Football','Volunteering','Reading'],bio:"Future doctor with a love for sports.",status:'active',joined:'2024-03-01',email:'marcus@state.edu',verified:true,photo:'',isSample:true},
+  {id:'s5',name:'Zara Ahmed',emoji:'👩🏽',dept:'Business',uni:'Commerce University',gender:'woman',interests:['Entrepreneurship','Yoga','Travel'],bio:"Aspiring entrepreneur. Let's build something great.",status:'active',joined:'2024-02-14',email:'zara@commerce.edu',verified:true,photo:'',isSample:true},
+  {id:'s6',name:'Tyler Kim',emoji:'🧑',dept:'Philosophy',uni:'Liberal Arts College',gender:'nonbinary',interests:['Reading','Film','Art'],bio:"Philosophy student who thinks too much.",status:'active',joined:'2024-01-20',email:'tyler@lac.edu',verified:true,photo:'',isSample:true},
+  {id:'s7',name:'Emma Costa',emoji:'👩🏼',dept:'Engineering',uni:'Tech Institute',gender:'woman',interests:['Robotics','Gaming','Music'],bio:"Engineer who breaks things to understand them.",status:'active',joined:'2024-03-10',email:'emma@techins.edu',verified:false,photo:'',isSample:true},
+  {id:'s8',name:'Jordan Parker',emoji:'👨🏼',dept:'Economics',uni:'Business Academy',gender:'man',interests:['Finance','Travel','Tennis'],bio:"Econ student who dreams of backpacking Asia.",status:'pending',joined:'2024-02-22',email:'jordan@bizac.edu',verified:false,photo:'',isSample:true},
 ];
 
 // ══════ UTILS ══════
+function escapeHTML(str) {
+  if (str == null) return '';
+  return String(str)
+    .replace(/&/g, '&amp;')
+    .replace(/</g, '&lt;')
+    .replace(/>/g, '&gt;')
+    .replace(/"/g, '&quot;')
+    .replace(/'/g, '&#x27;');
+}
+
+// ── Rate limiting state for auth operations ──
+let loginAttempts = 0;
+let loginLockoutUntil = 0;
+
 function showPage(id) {
   document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
   const el = document.getElementById(id);
@@ -932,10 +945,13 @@ function regStep1() {
   const email = document.getElementById('reg-email').value.trim();
   const pass  = document.getElementById('reg-password').value;
   if (!fname||!lname||!email) return toast('Please fill all fields','error');
+  if (fname.length > 50 || lname.length > 50) return toast('Name is too long (max 50 chars each)','error');
   if (!email.includes('@')) return toast('Enter a valid email','error');
+  if (email.length > 200) return toast('Email address is too long','error');
   if (pass.length < 8) return toast('Password must be at least 8 characters','error');
+  if (pass.length > 128) return toast('Password is too long (max 128 chars)','error');
   const existing = getUsers().find(u => u.email===email);
-  if (existing) return toast('Email already registered','error');
+  if (existing) return toast('Unable to register with this email','error');
   document.getElementById('verify-email-display').textContent = email;
   document.getElementById('reg-s1').style.display='none';
   document.getElementById('reg-s2').style.display='block';
@@ -957,6 +973,8 @@ function regStep3() {
   const uni  = document.getElementById('reg-uni').value.trim();
   const dept = document.getElementById('reg-dept').value.trim();
   if (!uni||!dept) return toast('Please fill all fields','error');
+  if (uni.length > 120) return toast('University name is too long (max 120 chars)','error');
+  if (dept.length > 120) return toast('Department name is too long (max 120 chars)','error');
   if (!selectedGender) return toast('Please select your gender','error');
   selectedInterests = [];
   renderInterestGrid('reg-interests-grid');
@@ -966,6 +984,9 @@ function regStep3() {
 }
 
 function handleRegister() {
+  const bio = document.getElementById('reg-bio').value.trim();
+  if (bio.length > 500) return toast('Bio must be 500 characters or fewer','error');
+  if (selectedInterests.length > 20) return toast('Select at most 20 interests','error');
   const user = {
     id: 'u_'+Date.now(),
     name: document.getElementById('reg-fname').value.trim()+' '+document.getElementById('reg-lname').value.trim(),
@@ -976,12 +997,13 @@ function handleRegister() {
     gender: selectedGender,
     pref: selectedPref||'everyone',
     interests: selectedInterests,
-    bio: document.getElementById('reg-bio').value.trim(),
+    bio,
     photo: regPhotoData,
     emoji: getEmoji(selectedGender),
     status:'active', verified:true,
     joined: new Date().toISOString().split('T')[0],
-    isAdmin:false
+    isAdmin:false,
+    isSample:false
   };
   const users = getUsers();
   users.push(user);
@@ -994,29 +1016,73 @@ function handleRegister() {
 
 // ══════ LOGIN ══════
 function handleLogin() {
+  const now = Date.now();
+  if (now < loginLockoutUntil) {
+    const secs = Math.ceil((loginLockoutUntil - now) / 1000);
+    return toast(`Too many failed attempts. Try again in ${secs}s.`, 'error');
+  }
   const email = document.getElementById('login-email').value.trim();
   const pass  = document.getElementById('login-password').value;
   if (email===ADMIN_EMAIL && pass===ADMIN_PASS) {
+    loginAttempts = 0;
     currentUser = {id:'admin',name:'Admin',email:ADMIN_EMAIL,uni:'UniMatch HQ',dept:'Administration',emoji:'⚙️',isAdmin:true,photo:''};
     DB.set('um_me', currentUser);
     initApp(); return;
   }
   const users = getUsers();
   const user = users.find(u => u.email===email && u.password===pass);
-  if (!user) return toast('Wrong email or password','error');
-  if (user.status==='banned') return toast('Account suspended','error');
+  if (!user) {
+    loginAttempts++;
+    if (loginAttempts >= 5) {
+      // Exponential backoff: 30s, 60s, 120s … capped at 5 min
+      const delay = Math.min(30000 * Math.pow(2, loginAttempts - 5), 300000);
+      loginLockoutUntil = Date.now() + delay;
+      return toast('Too many failed attempts. Please wait before trying again.', 'error');
+    }
+    return toast('Invalid email or password.', 'error');
+  }
+  if (user.status==='banned') return toast('This account has been suspended.', 'error');
+  loginAttempts = 0;
   currentUser = user;
   DB.set('um_me', currentUser);
   initApp();
 }
-function fillAdmin() {
-  document.getElementById('login-email').value = ADMIN_EMAIL;
-  document.getElementById('login-password').value = ADMIN_PASS;
-  toast('Admin credentials filled!','info');
-}
 function logout() {
+  if (currentUser) {
+    DB.del('um_likes_'+currentUser.id);
+    DB.del('um_matches_'+currentUser.id);
+    DB.del('um_swiped_'+currentUser.id);
+    DB.del('um_msgs_'+currentUser.id);
+  }
   DB.del('um_me');
   currentUser=null; likes=[]; matches=[]; swipedIds=[]; msgs={}; msgCount=0;
+  loginAttempts=0; loginLockoutUntil=0;
+  showPage('landing');
+}
+
+function deleteAccount() {
+  if (!currentUser) return;
+  if (!confirm('Are you sure you want to permanently delete your account? This cannot be undone.')) return;
+  if (!confirm('This will delete all your profile data, matches, and messages. Confirm deletion?')) return;
+
+  const uid = currentUser.id;
+
+  // Remove user from the users list
+  let users = getUsers();
+  users = users.filter(u => u.id !== uid);
+  saveUsers(users);
+
+  // Delete all user-specific localStorage data
+  DB.del('um_likes_'+uid);
+  DB.del('um_matches_'+uid);
+  DB.del('um_swiped_'+uid);
+  DB.del('um_msgs_'+uid);
+  DB.del('um_me');
+
+  currentUser=null; likes=[]; matches=[]; swipedIds=[]; msgs={}; msgCount=0;
+  loginAttempts=0; loginLockoutUntil=0;
+
+  toast('Your account has been deleted.', 'info');
   showPage('landing');
 }
 
@@ -1088,17 +1154,17 @@ function buildSwipeCard(p, isTop) {
   card.dataset.id = p.id;
 
   const photoContent = p.photo
-    ? `<img src="${p.photo}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">`
-    : `<span style="font-size:8rem">${p.emoji||'😊'}</span>`;
+    ? `<img src="${escapeHTML(p.photo)}" alt="${escapeHTML(p.name)}" style="width:100%;height:100%;object-fit:cover;">`
+    : `<span style="font-size:8rem">${escapeHTML(p.emoji||'😊')}</span>`;
 
   card.innerHTML = `
     <div class="swipe-photo">${photoContent}</div>
     <div class="swipe-gradient"></div>
     <div class="swipe-info">
-      <div class="swipe-name">${p.name}</div>
-      <div class="swipe-meta">${p.dept||''} • ${p.uni||''}</div>
+      <div class="swipe-name">${escapeHTML(p.name)}</div>
+      <div class="swipe-meta">${escapeHTML(p.dept||'')} • ${escapeHTML(p.uni||'')}</div>
       <div class="swipe-tags">
-        ${(p.interests||[]).slice(0,3).map(t=>`<span class="swipe-tag">${t}</span>`).join('')}
+        ${(p.interests||[]).slice(0,3).map(t=>`<span class="swipe-tag">${escapeHTML(t)}</span>`).join('')}
       </div>
     </div>
     <div class="swipe-label like">LIKE</div>
@@ -1185,9 +1251,9 @@ function showMatchPopup(profile) {
   document.getElementById('match-popup-name').textContent = profile.name;
   const youEl = document.getElementById('mp-you');
   const themEl = document.getElementById('mp-them');
-  if (currentUser.photo) youEl.innerHTML = `<img src="${currentUser.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+  if (currentUser.photo) youEl.innerHTML = `<img src="${escapeHTML(currentUser.photo)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
   else youEl.textContent = currentUser.emoji||'😊';
-  if (profile.photo) themEl.innerHTML = `<img src="${profile.photo}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
+  if (profile.photo) themEl.innerHTML = `<img src="${escapeHTML(profile.photo)}" style="width:100%;height:100%;border-radius:50%;object-fit:cover;">`;
   else themEl.textContent = profile.emoji||'😊';
   document.getElementById('match-popup').classList.add('show');
   setTimeout(()=>{ activeChat=profile.id; renderChatHeader(profile); }, 100);
@@ -1208,16 +1274,17 @@ function renderDiscover() {
   const colors=['#ffe8ec','#fff3e0','#e8f5e9','#e3f2fd','#f3e5f5'];
   grid.innerHTML=profiles.map((p,i)=>{
     const liked=likes.includes(p.id), matched=matches.includes(p.id);
-    const photoEl = p.photo ? `<img src="${p.photo}" alt="${p.name}" style="width:100%;height:100%;object-fit:cover;">` : `<span class="card-image-emoji">${p.emoji||'😊'}</span>`;
+    const photoEl = p.photo ? `<img src="${escapeHTML(p.photo)}" alt="${escapeHTML(p.name)}" style="width:100%;height:100%;object-fit:cover;">` : `<span class="card-image-emoji">${escapeHTML(p.emoji||'😊')}</span>`;
+    const bioSnippet = escapeHTML((p.bio||'').substring(0,80)) + ((p.bio||'').length>80?'…':'');
     return `<div class="profile-card">
       <div class="card-image" style="background:${colors[i%colors.length]}">${photoEl}${matched?'<span class="card-badge">💞 Match!</span>':''}</div>
       <div class="card-body">
-        <div class="card-name">${p.name}</div>
-        <div class="card-info">${p.dept||''} • ${p.uni||''}</div>
-        <div class="card-tags">${(p.interests||[]).slice(0,3).map(t=>`<span class="card-tag">${t}</span>`).join('')}</div>
-        <p style="font-size:0.82rem;color:var(--mid);margin-bottom:0.8rem;line-height:1.5;">${(p.bio||'').substring(0,80)}${(p.bio||'').length>80?'...':''}</p>
+        <div class="card-name">${escapeHTML(p.name)}</div>
+        <div class="card-info">${escapeHTML(p.dept||'')} • ${escapeHTML(p.uni||'')}</div>
+        <div class="card-tags">${(p.interests||[]).slice(0,3).map(t=>`<span class="card-tag">${escapeHTML(t)}</span>`).join('')}</div>
+        <p style="font-size:0.82rem;color:var(--mid);margin-bottom:0.8rem;line-height:1.5;">${bioSnippet}</p>
         <div class="card-actions">
-          <button class="card-btn card-btn-like" onclick="quickLike('${p.id}',this)">${liked?'❤️ Liked':'💗 Like'}</button>
+          <button class="card-btn card-btn-like" onclick="quickLike('${escapeHTML(p.id)}',this)">${liked?'❤️ Liked':'💗 Like'}</button>
           <button class="card-btn card-btn-skip" onclick="this.closest('.profile-card').remove()">Pass</button>
         </div>
       </div></div>`;
@@ -1245,12 +1312,12 @@ function renderMatches() {
   if(!matched.length){list.innerHTML=`<div class="empty-state"><div class="empty-icon">💞</div><h3>No matches yet</h3><p>Start swiping or liking profiles!</p></div>`;return;}
   list.innerHTML=matched.map(u=>{
     const conv=msgs[u.id]||[], last=conv[conv.length-1];
-    const avatarEl=u.photo?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:(u.emoji||'😊');
-    return `<div class="match-item" onclick="openChat('${u.id}')">
+    const avatarEl=u.photo?`<img src="${escapeHTML(u.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`:(escapeHTML(u.emoji||'😊'));
+    return `<div class="match-item" onclick="openChat('${escapeHTML(u.id)}')">
       <div class="match-item-avatar">${avatarEl}</div>
       <div style="flex:1;min-width:0;">
-        <div class="match-name">${u.name}</div>
-        <div class="match-preview">${last?last.text.substring(0,40):'Say hello!'}</div>
+        <div class="match-name">${escapeHTML(u.name)}</div>
+        <div class="match-preview">${last?escapeHTML(last.text.substring(0,40)):'Say hello!'}</div>
       </div>
       <div style="text-align:right;">
         <div class="match-time">${last?'Today':'New'}</div>
@@ -1267,13 +1334,13 @@ function renderChatList() {
   if(!matched.length){container.innerHTML='<div style="padding:1rem;color:var(--mid);font-size:0.85rem;">No matches yet</div>';return;}
   container.innerHTML=matched.map(u=>{
     const conv=msgs[u.id]||[], last=conv[conv.length-1];
-    const avatarEl=u.photo?`<img src="${u.photo}" style="width:100%;height:100%;object-fit:cover;">`:(u.emoji||'😊');
+    const avatarEl=u.photo?`<img src="${escapeHTML(u.photo)}" style="width:100%;height:100%;object-fit:cover;">`:(escapeHTML(u.emoji||'😊'));
     const isActive=activeChat===u.id;
-    return `<div class="chat-list-item${isActive?' active':''}" onclick="openChat('${u.id}')">
+    return `<div class="chat-list-item${isActive?' active':''}" onclick="openChat('${escapeHTML(u.id)}')">
       <div class="cli-avatar">${avatarEl}</div>
       <div style="flex:1;min-width:0;">
-        <div class="cli-name">${u.name}</div>
-        <div class="cli-preview">${last?last.text:'Start chatting!'}</div>
+        <div class="cli-name">${escapeHTML(u.name)}</div>
+        <div class="cli-preview">${last?escapeHTML(last.text):'Start chatting!'}</div>
       </div></div>`;
   }).join('');
 }
@@ -1289,7 +1356,7 @@ function openChat(uid) {
 
 function renderChatHeader(user) {
   const av=document.getElementById('ch-avatar'), nm=document.getElementById('ch-name');
-  if(user.photo) av.innerHTML=`<img src="${user.photo}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
+  if(user.photo) av.innerHTML=`<img src="${escapeHTML(user.photo)}" style="width:100%;height:100%;object-fit:cover;border-radius:50%;">`;
   else av.textContent=user.emoji||'😊';
   nm.textContent=user.name;
 }
@@ -1300,10 +1367,10 @@ function renderChatMessages() {
   const container=document.getElementById('chat-messages');
   if(!conv.length){
     const u=getUsers().find(x=>x.id===activeChat);
-    container.innerHTML=`<div class="empty-state"><div class="empty-icon">👋</div><h3>Say hi to ${u?u.name:'them'}!</h3></div>`;
+    container.innerHTML=`<div class="empty-state"><div class="empty-icon">👋</div><h3>Say hi to ${u?escapeHTML(u.name):'them'}!</h3></div>`;
     return;
   }
-  container.innerHTML=conv.map(m=>`<div class="msg ${m.sent?'sent':'recv'}"><div class="msg-bubble">${m.text}</div><div class="msg-time">${m.time}</div></div>`).join('');
+  container.innerHTML=conv.map(m=>`<div class="msg ${m.sent?'sent':'recv'}"><div class="msg-bubble">${escapeHTML(m.text)}</div><div class="msg-time">${escapeHTML(m.time)}</div></div>`).join('');
   container.scrollTop=container.scrollHeight;
 }
 
@@ -1314,6 +1381,7 @@ function sendMsg() {
   const input=document.getElementById('chat-input');
   const text=input.value.trim();
   if(!text)return;
+  if(text.length>2000)return toast('Message is too long (max 2000 chars)','error');
   if(!msgs[activeChat])msgs[activeChat]=[];
   const time=new Date().toLocaleTimeString([],{hour:'2-digit',minute:'2-digit'});
   msgs[activeChat].push({text,sent:true,time});
@@ -1340,7 +1408,7 @@ function renderProfile() {
   document.getElementById('pf-name').textContent=currentUser.name;
   document.getElementById('pf-meta').textContent=`${currentUser.dept||''} • ${currentUser.uni||''}`;
   document.getElementById('pf-bio').textContent=currentUser.bio||'No bio yet. Edit your profile to add one!';
-  document.getElementById('pf-interests').innerHTML=(currentUser.interests||[]).map(i=>`<span class="card-tag">${i}</span>`).join('')||'<span style="color:var(--mid)">None yet</span>';
+  document.getElementById('pf-interests').innerHTML=(currentUser.interests||[]).map(i=>`<span class="card-tag">${escapeHTML(i)}</span>`).join('')||'<span style="color:var(--mid)">None yet</span>';
   updateStats();
 }
 
@@ -1359,8 +1427,13 @@ function openEditModal() {
 }
 
 function saveProfile() {
-  currentUser.bio=document.getElementById('edit-bio').value.trim();
-  currentUser.dept=document.getElementById('edit-dept').value.trim();
+  const bio = document.getElementById('edit-bio').value.trim();
+  const dept = document.getElementById('edit-dept').value.trim();
+  if (bio.length > 500) return toast('Bio must be 500 characters or fewer','error');
+  if (dept.length > 120) return toast('Department name is too long (max 120 chars)','error');
+  if (selectedInterests.length > 20) return toast('Select at most 20 interests','error');
+  currentUser.bio=bio;
+  currentUser.dept=dept;
   currentUser.interests=selectedInterests;
   updateUserInDB(currentUser);
   closeModal('edit-modal');
@@ -1394,15 +1467,15 @@ function renderAdmin() {
   if(aSearch)users=users.filter(u=>u.name.toLowerCase().includes(aSearch)||u.email.toLowerCase().includes(aSearch));
   if(aStatus)users=users.filter(u=>u.status===aStatus);
   document.getElementById('admin-tbody').innerHTML=users.map(u=>`<tr>
-    <td><strong>${u.photo?`<img src="${u.photo}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">`:u.emoji||'😊'} ${u.name}</strong></td>
-    <td style="font-size:0.82rem">${u.email}</td>
-    <td>${u.uni||'-'}</td>
+    <td><strong>${u.photo?`<img src="${escapeHTML(u.photo)}" style="width:28px;height:28px;border-radius:50%;object-fit:cover;vertical-align:middle;margin-right:6px;">`:escapeHTML(u.emoji||'😊')} ${escapeHTML(u.name)}</strong></td>
+    <td style="font-size:0.82rem">${escapeHTML(u.email)}</td>
+    <td>${escapeHTML(u.uni||'-')}</td>
     <td>${u.verified?'✅ Yes':'❌ No'}</td>
-    <td><span class="status-badge status-${u.status||'active'}">${u.status||'active'}</span></td>
+    <td><span class="status-badge status-${escapeHTML(u.status||'active')}">${escapeHTML(u.status||'active')}</span></td>
     <td>
-      ${u.status!=='active'?`<button class="action-btn action-approve" onclick="adminAction('${u.id}','approve')">Approve</button>`:''}
-      ${u.status!=='banned'?`<button class="action-btn action-ban" onclick="adminAction('${u.id}','ban')">Ban</button>`:`<button class="action-btn action-approve" onclick="adminAction('${u.id}','unban')">Unban</button>`}
-      <button class="action-btn action-delete" onclick="adminAction('${u.id}','delete')">Delete</button>
+      ${u.status!=='active'?`<button class="action-btn action-approve" onclick="adminAction('${escapeHTML(u.id)}','approve')">Approve</button>`:''}
+      ${u.status!=='banned'?`<button class="action-btn action-ban" onclick="adminAction('${escapeHTML(u.id)}','ban')">Ban</button>`:`<button class="action-btn action-approve" onclick="adminAction('${escapeHTML(u.id)}','unban')">Unban</button>`}
+      <button class="action-btn action-delete" onclick="adminAction('${escapeHTML(u.id)}','delete')">Delete</button>
     </td></tr>`).join('');
 }
 

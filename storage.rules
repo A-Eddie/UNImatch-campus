@@ -1,0 +1,29 @@
+rules_version = '2';
+service firebase.storage {
+  match /b/{bucket}/o {
+
+    // ── Deny everything by default ────────────────────────────────────────────
+    match /{allPaths=**} {
+      allow read, write: if false;
+    }
+
+    // ── Profile photos ─────────────────────────────────────────────────────────
+    // Path: profiles/{uid}/photo.{ext}
+    match /profiles/{userId}/{fileName} {
+      // Anyone authenticated can read profile photos (public profiles)
+      allow read: if request.auth != null;
+
+      // Only the owner can upload/replace their own photo
+      allow write: if request.auth != null
+        && request.auth.uid == userId
+        // Maximum file size: 5 MB
+        && request.resource.size <= 5 * 1024 * 1024
+        // Only image MIME types are permitted
+        && request.resource.contentType.matches('image/(jpeg|png|webp|gif)');
+
+      // Only the owner can delete their own photo
+      allow delete: if request.auth != null && request.auth.uid == userId;
+    }
+
+  }
+}
